@@ -1,7 +1,18 @@
 import java.sql.* ;
+import java.util.Scanner;
 
 class simpleJDBC
 {
+
+    public static void uploadNewSong() {
+
+    }
+
+    public static void deleteAccount() {
+
+    }
+
+
     public static void main ( String [ ] args ) throws SQLException
     {
       // Unique table names.  Either the user supplies a unique identifier as a command line argument, or the program makes one up.
@@ -20,7 +31,7 @@ class simpleJDBC
 
         // This is the url you must use for DB2.
         //Note: This url may not valid now ! Check for the correct year and semester and server name.
-        String url = "jdbc:db2://winter2024-comp421.cs.mcgill.ca:50000/comp421";
+        String url = "jdbc:db2://winter2026-comp421.cs.mcgill.ca:50000/comp421";
 
         //REMEMBER to remove your user id and password before submitting your code!!
         String your_userid = null;
@@ -40,6 +51,32 @@ class simpleJDBC
         Connection con = DriverManager.getConnection (url,your_userid,your_password) ;
         Statement statement = con.createStatement ( ) ;
 
+        Scanner s = new Scanner(System.in);
+
+        final String MENU = "Please choose an option from the following:\n" +
+                "\n" +
+                "\n" +
+                "" +
+                "" +
+                "";
+
+        while(true) {
+            System.out.println(MENU);
+            int menuOption = s.nextInt();
+            if(menuOption <= 0 || menuOption > 6) {
+                System.out.println("Please choose a valid option from the following list; ");
+                continue;
+            }
+
+            switch(menuOption) {
+                case 1:
+                    continue;
+            }
+
+        }
+
+
+        /*
         // Creating a table
         try
         {
@@ -143,5 +180,7 @@ class simpleJDBC
       // Finally but importantly close the statement and connection
       statement.close ( ) ;
       con.close ( ) ;
+     */
     }
+
 }
