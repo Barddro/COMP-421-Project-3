@@ -4,7 +4,6 @@ public class User {
 
     private UserTemplate user;
 
-
     /**
      * Takes in plain-text password and returns salted, hashed version for validation against database.
      * @param password  Plain-text password to salt/hash.
@@ -13,6 +12,13 @@ public class User {
     public static String hashPassword(String password) {
         //TODO: Implement function
         return password;
+    }
+
+
+    private static void createAccount(String username, String password) {
+        password = hashPassword(password);
+
+        // check if unique id already exists in db
     }
 
     public User() {
@@ -30,12 +36,18 @@ public class User {
         // Now that user info has been verified:
         if (valid) {
             this.user = new LoggedInUser(username, isArtist);
+            System.out.println("Logged in! Welcome, " + username);
             return true;
         }
+        System.out.println("Failed to log in. Invalid username or password");
         return false;
     }
 
     public boolean validate() {
         return this.user.validate();
+    }
+
+    public boolean isArtist() {
+        return this.user.isArtist();
     }
 }

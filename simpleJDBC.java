@@ -1,18 +1,31 @@
+import usersupport.User;
 import java.sql.* ;
 import java.util.Scanner;
+
 class simpleJDBC {
     public static Scanner s = new Scanner(System.in);
     // can we optimize by letting genre be an int, then using a mapping int -> genreName @ the application level?
 
-    /*
-    public static boolean clean(String in) {
-        // Clean by ESCAPING any potentially dangerous characters (ie. ' => \')
-        // INSTEAD: we can use java.sql.PreparedStatement https://docs.oracle.com/javase/6/docs/api/java/sql/PreparedStatement.html
-        
-        return true;
-    } */
+    public static User user = new User();
+
+    // Functions representing command line options, organized in the following way:
+    //  input<OptionName>: gets all necessary data from command line and calls exec method
+    //  exec<OptionName>: execs database reads/writes after getting input from user
+
+    public static void inputLogin() {
+        System.out.println("Please enter your username:");
+        String username = s.next();
+
+        System.out.println("Please enter your password:");
+        String password = s.next();
+
+        simpleJDBC.user.login(username, password);
+    }
 
     public static void inputUploadNewAlbum() {
+        if (!user.isArtist()) {
+            System.out.println("Please log in with a valid Artist account before uploading an album");
+        }
         System.out.println("Please enter the name of the album:");
         String albumTitle = s.next();
 
@@ -31,9 +44,6 @@ class simpleJDBC {
         boolean validArtist = false;
         String valid;
 
-        // we could also make this more sophisticated by creating a login system so that artists must log in to upload songs
-        // that way we can also demonstrate common patterns when dealing with sensistive info like hashing + salting
-
 
 
         //... repeat for each field!
@@ -46,9 +56,10 @@ class simpleJDBC {
 
     }
 
+    /*
     public static void deleteAccount() {
 
-    }
+    */
 
     // WE PREVENT SQL INJECTIONS BY USING PREPAREDSTATEMENTS
     public static void main ( String [ ] args ) throws Exception
@@ -100,9 +111,9 @@ class simpleJDBC {
         Statement statement = con.createStatement();
 
         final String MENU = "Please choose an option from the following:\n" +
-                "1. Upload a new album \n" +
+                "1. Login\n" +
                 "2. \n" +
-                "3. \n" +
+                "3. Upload a new album\n" +
                 "4. \n" +
                 "5. \n" +
                 "6. ";
@@ -111,17 +122,17 @@ class simpleJDBC {
             System.out.println(MENU);
             int menuOption = s.nextInt();
             if(menuOption <= 0 || menuOption > 6) {
-                System.out.println("Please choose a valid option from the following list; ");
+                System.out.println("Please choose a valid option");
                 continue;
             }
 
             switch(menuOption) {
                 case 1:
-                    continue;
+                    inputLogin();
                 case 2:
                     continue;
                 case 3:
-                    continue;
+                    inputUploadNewAlbum();
                 case 4:
                     continue;
                 case 5:
