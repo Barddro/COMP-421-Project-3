@@ -1,10 +1,48 @@
 import java.sql.* ;
 import java.util.Scanner;
+class simpleJDBC {
+    public static Scanner s = new Scanner(System.in);
+    // can we optimize by letting genre be an int, then using a mapping int -> genreName @ the application level?
 
-class simpleJDBC
-{
+    /*
+    public static boolean clean(String in) {
+        // Clean by ESCAPING any potentially dangerous characters (ie. ' => \')
+        // INSTEAD: we can use java.sql.PreparedStatement https://docs.oracle.com/javase/6/docs/api/java/sql/PreparedStatement.html
+        
+        return true;
+    } */
 
-    public static void uploadNewSong() {
+    public static void inputUploadNewAlbum() {
+        System.out.println("Please enter the name of the album:");
+        String albumTitle = s.next();
+
+        boolean validGenre = false;
+        String albumGenre = "";
+
+        while (!validGenre) {
+            System.out.println("Please enter the genre of the album from the following list:\n"
+                    + String.join("\n", Genres.getGenres())
+            );
+
+            albumGenre = (s.next()).toLowerCase();
+            validGenre = Genres.validateGenre(albumGenre);
+        }
+
+        boolean validArtist = false;
+        String valid;
+
+        // we could also make this more sophisticated by creating a login system so that artists must log in to upload songs
+        // that way we can also demonstrate common patterns when dealing with sensistive info like hashing + salting
+
+
+
+        //... repeat for each field!
+        execUploadNewAlbum(albumTitle, albumGenre, artist, songs);
+
+    }
+
+    public static void execUploadNewAlbum(String albumTitle, String genre, String artist, String[] songs) {
+
 
     }
 
@@ -12,8 +50,8 @@ class simpleJDBC
 
     }
 
-
-    public static void main ( String [ ] args ) throws SQLException
+    // WE PREVENT SQL INJECTIONS BY USING PREPAREDSTATEMENTS
+    public static void main ( String [ ] args ) throws Exception
     {
       // Unique table names.  Either the user supplies a unique identifier as a command line argument, or the program makes one up.
         String tableName = "";
@@ -33,6 +71,7 @@ class simpleJDBC
         //Note: This url may not valid now ! Check for the correct year and semester and server name.
         String url = "jdbc:db2://winter2026-comp421.cs.mcgill.ca:50000/comp421";
 
+        /*
         //REMEMBER to remove your user id and password before submitting your code!!
         String your_userid = null;
         String your_password = null;
@@ -48,17 +87,25 @@ class simpleJDBC
           System.err.println("Error!! do not have a password to connect to the database!");
           System.exit(1);
         }
-        Connection con = DriverManager.getConnection (url,your_userid,your_password) ;
-        Statement statement = con.createStatement ( ) ;
+        */
 
-        Scanner s = new Scanner(System.in);
+        String your_userid = System.getenv("SOCSUSER");
+        String your_password = System.getenv("SOCSPASSWD");
+
+        if(your_userid == null || your_password == null) {
+            throw new Exception("Must have SOCSUSER and SOCSPASSED env variables set!");
+        }
+
+        Connection con = DriverManager.getConnection(url,your_userid,your_password);
+        Statement statement = con.createStatement();
 
         final String MENU = "Please choose an option from the following:\n" +
-                "\n" +
-                "\n" +
-                "" +
-                "" +
-                "";
+                "1. Upload a new album \n" +
+                "2. \n" +
+                "3. \n" +
+                "4. \n" +
+                "5. \n" +
+                "6. ";
 
         while(true) {
             System.out.println(MENU);
@@ -71,12 +118,25 @@ class simpleJDBC
             switch(menuOption) {
                 case 1:
                     continue;
+                case 2:
+                    continue;
+                case 3:
+                    continue;
+                case 4:
+                    continue;
+                case 5:
+                    continue;
+                default:
+                    break;
             }
-
         }
 
+        statement.close();
+        con.close();
 
-        /*
+    }
+
+      /*
         // Creating a table
         try
         {
@@ -89,7 +149,7 @@ class simpleJDBC
         {
           sqlCode = e.getErrorCode(); // Get SQLCODE
           sqlState = e.getSQLState(); // Get SQLSTATE
-                
+
           // Your code to handle errors comes here;
           // something more meaningful than a print would be good
           System.out.println("Code: " + sqlCode + "  sqlState: " + sqlState);
@@ -118,7 +178,7 @@ class simpleJDBC
         {
           sqlCode = e.getErrorCode(); // Get SQLCODE
           sqlState = e.getSQLState(); // Get SQLSTATE
-                
+
           // Your code to handle errors comes here;
           // something more meaningful than a print would be good
           System.out.println("Code: " + sqlCode + "  sqlState: " + sqlState);
@@ -145,7 +205,7 @@ class simpleJDBC
         {
           sqlCode = e.getErrorCode(); // Get SQLCODE
           sqlState = e.getSQLState(); // Get SQLSTATE
-                
+
           // Your code to handle errors comes here;
           // something more meaningful than a print would be good
           System.out.println("Code: " + sqlCode + "  sqlState: " + sqlState);
@@ -170,7 +230,7 @@ class simpleJDBC
       {
         sqlCode = e.getErrorCode(); // Get SQLCODE
         sqlState = e.getSQLState(); // Get SQLSTATE
-                
+
         // Your code to handle errors comes here;
         // something more meaningful than a print would be good
         System.out.println("Code: " + sqlCode + "  sqlState: " + sqlState);
@@ -181,6 +241,4 @@ class simpleJDBC
       statement.close ( ) ;
       con.close ( ) ;
      */
-    }
-
 }
