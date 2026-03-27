@@ -1,10 +1,10 @@
 import usersupport.User;
-import utils.PublicDAO;
+import utils.DAO;
 
 import java.sql.* ;
 import java.util.Scanner;
 
-class simpleJDBC {
+class Application {
     public static Scanner s = new Scanner(System.in);
     // can we optimize by letting genre be an int, then using a mapping int -> genreName @ the application level?
 
@@ -21,7 +21,7 @@ class simpleJDBC {
         System.out.println("Please enter your password:");
         String password = s.next();
 
-        simpleJDBC.user.login(username, password);
+        Application.user.login(username, password);
     }
 
     public static void inputUploadNewAlbum() {
@@ -111,7 +111,7 @@ class simpleJDBC {
 
         //Connection con = DriverManager.getConnection(url,your_userid,your_password);
 
-        PublicDAO.getConnection(url, your_userid, your_password);
+        DAO.getConnection(url, your_userid, your_password);
 
         final String MENU = "Please choose an option from the following:\n" +
                 "1. Login\n" +
@@ -146,7 +146,7 @@ class simpleJDBC {
         }
 
         //statement.close();
-        PublicDAO.close();
+        DAO.close();
 
     }
 

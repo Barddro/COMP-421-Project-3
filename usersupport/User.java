@@ -1,12 +1,15 @@
 package usersupport;
 
-import utils.PublicDAO;
+import utils.DAO;
 import utils.Security;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * Wraps a UserTemplate to provide api to interface with user login, validation, etc, as well as neatly handle user login.
+ */
 public class User {
 
     private UserTemplate user;
@@ -21,8 +24,7 @@ public class User {
     private static void createAccount(String username, String password) {
         password = Security.hashString(password);
 
-
-        // check if unique id already exists in db
+        // check if username already exists in db. If not, insert info into db
     }
 
     public User() {
@@ -32,26 +34,22 @@ public class User {
     public void login(String username, String password) throws SQLException {
         password = Security.hashString(password);
         boolean isArtist = false;
-        // do the join on artists HERE!
-        // -> If user doesn't exist period, remain as guest user and print error/throw error
-        // -> If user is a standard user but not an artist, set isArtist to false
-        // -> Else if user IS an artist as well, set isArtist to true
 
         // do a left join on userid, artistid to get all info, then we can check if userid is null or not
         String query = "SELECT u.username, a.artistid FROM User u" +
                 "LEFT JOIN Artists a" +
                 "ON u.username = a.username" +
                 "WHERE u.username = ?" +
-                "AND u.password = ?";
-        try (PreparedStatement stmt = PublicDAO.getConnection().prepareStatement(query)) {
+                "AND u.password = ?;";
+        try (PreparedStatement stmt = DAO.getConnection().prepareStatement(query)) {
             stmt.setString(1, username);
             stmt.setString(2, password);
-            ResultSet myRs = stmt.executeQuery();
+            ResultSet results = stmt.executeQuery();
 
-            if (myRs.next()) {
+            if (results.next()) {
                 // user exists
-                int artistId = myRs.getInt("artistid");
-                if (!myRs.wasNull()) {
+                int artistId = results.getInt("artistid");
+                if (!results.wasNull()) {
                     // artistid was not null, so user is an artist
                     isArtist = true;
                 }

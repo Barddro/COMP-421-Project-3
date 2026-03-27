@@ -7,7 +7,7 @@ import java.sql.SQLException;
 /**
  * DAO for handling database access with a singleton connection
  */
-public class PublicDAO {
+public class DAO {
     private static Connection connection;
 
     public static Connection getConnection(String url, String user, String pass) throws SQLException {
@@ -25,6 +25,6 @@ public class PublicDAO {
     }
 
     public static void close() throws SQLException {
-        PublicDAO.connection.close();
+        DAO.connection.close();
     }
 }
