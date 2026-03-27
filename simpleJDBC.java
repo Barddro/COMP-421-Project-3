@@ -1,4 +1,6 @@
 import usersupport.User;
+import utils.PublicDAO;
+
 import java.sql.* ;
 import java.util.Scanner;
 
@@ -12,7 +14,7 @@ class simpleJDBC {
     //  input<OptionName>: gets all necessary data from command line and calls exec method
     //  exec<OptionName>: execs database reads/writes after getting input from user
 
-    public static void inputLogin() {
+    public static void inputLogin() throws SQLException {
         System.out.println("Please enter your username:");
         String username = s.next();
 
@@ -107,8 +109,9 @@ class simpleJDBC {
             throw new Exception("Must have SOCSUSER and SOCSPASSED env variables set!");
         }
 
-        Connection con = DriverManager.getConnection(url,your_userid,your_password);
-        Statement statement = con.createStatement();
+        //Connection con = DriverManager.getConnection(url,your_userid,your_password);
+
+        PublicDAO.getConnection(url, your_userid, your_password);
 
         final String MENU = "Please choose an option from the following:\n" +
                 "1. Login\n" +
@@ -142,8 +145,8 @@ class simpleJDBC {
             }
         }
 
-        statement.close();
-        con.close();
+        //statement.close();
+        PublicDAO.close();
 
     }
 
