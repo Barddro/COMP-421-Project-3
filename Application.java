@@ -137,6 +137,11 @@ class Application {
                 case 3:
                     inputUploadNewAlbum();
                 case 4:
+                    // find top albums by genre:
+                    //  -> fulfills requirement of submenu by:
+                    //      -> get list of genres using Genres.getGenres.toArrayList()
+                    //      -> print out list of genres and have user input corresponding number
+                    //      -> based on that number, query db for top albums with that genre
                     continue;
                 case 5:
                     continue;
