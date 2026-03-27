@@ -27,4 +27,12 @@ public class DAO {
     public static void close() throws SQLException {
         DAO.connection.close();
     }
+
+    public static boolean checkDuplicateInsertion(SQLException e, String msg) {
+        if("23505".equals(e.getSQLState()) || e.getErrorCode() == -803) {
+            System.out.println(msg);
+            return true;
+        }
+        return false;
+    }
 }

@@ -53,8 +53,8 @@ public class Genres {
     public static void addGenre(String genre) {
         genre = genre.toLowerCase();
 
-        String query = "INSERT INTO Genre" +
-                "VALUES ('?');";
+        String query = "INSERT INTO Genre " +
+                "VALUES ('?')";
 
         try (PreparedStatement stmt = DAO.getConnection().prepareStatement(query)){
             stmt.setString(1, genre);
@@ -62,12 +62,11 @@ public class Genres {
             dirty = true;
         }
         catch(SQLException e) {
-            if("23505".equals(e.getSQLState()) || e.getErrorCode() == -803) {
-                System.out.println("Genre " + genre + "already exists in the db");
-            }
-            else {
+            if (!DAO.checkDuplicateInsertion(e, "Genre " + genre + "already exists in the db")) {
                 System.err.println("Error occurred inserting genre " + genre + " into the db");
             }
         }
+
     }
+
 }

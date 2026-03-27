@@ -3,6 +3,7 @@ package usersupport;
 import utils.DAO;
 import utils.Security;
 
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -14,17 +15,24 @@ public class User {
 
     private UserTemplate user;
 
-    /**
-     * Takes in plain-text password and returns hashed version for validation against database.
-     * @param password  Plain-text password to hash.
-     * @return Hashed password.
-     */
-
-
-    private static void createAccount(String username, String password) {
+    public static void createAccount(String username, String password, String name, String email, Date sqlDate) throws SQLException {
         password = Security.hashString(password);
+        String query = "INSERT INTO User (username, password, name, email, dateOfBirth) " +
+                "VALUES (?, ?, ?, ?, ?)";
 
-        // check if username already exists in db. If not, insert info into db
+        try (PreparedStatement stmt = DAO.getConnection().prepareStatement(query)) {
+            stmt.setString(1, username);
+            stmt.setString(2, password);
+            stmt.setString(3, name);
+            stmt.setString(4, email);
+            stmt.setDate(5, sqlDate);
+            stmt.executeUpdate();
+        }
+        catch (SQLException e) {
+            if(!DAO.checkDuplicateInsertion(e, "Account with username " + username + "already exists")) {
+                System.out.println("Error: Failed to create account.");
+            }
+        }
     }
 
     public User() {
@@ -36,11 +44,11 @@ public class User {
         boolean isArtist = false;
 
         // do a left join on userid, artistid to get all info, then we can check if userid is null or not
-        String query = "SELECT u.username, a.artistid FROM User u" +
-                "LEFT JOIN Artists a" +
-                "ON u.username = a.username" +
-                "WHERE u.username = ?" +
-                "AND u.password = ?;";
+        String query = "SELECT u.username, a.artistid FROM User u " +
+                "LEFT JOIN Artists a " +
+                "ON u.username = a.username " +
+                "WHERE u.username = ? " +
+                "AND u.password = ?";
         try (PreparedStatement stmt = DAO.getConnection().prepareStatement(query)) {
             stmt.setString(1, username);
             stmt.setString(2, password);

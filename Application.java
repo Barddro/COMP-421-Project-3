@@ -2,6 +2,7 @@ import usersupport.User;
 import utils.DAO;
 
 import java.sql.* ;
+import java.time.LocalDate;
 import java.util.Scanner;
 
 class Application {
@@ -10,7 +11,18 @@ class Application {
 
     public static User user = new User();
 
-    // Functions representing command line options, organized in the following way:
+    // ------------ Helpers ------------ //
+
+    public static boolean validateInputRange(int lo, int hi, int menuOption) {
+        if(menuOption < lo || menuOption > hi) {
+            System.out.println("Please choose a valid option");
+            return false;
+        }
+        return true;
+    }
+
+
+    // ------------ Functions representing command line options, organized in the following way: ------------ //
     //  input<OptionName>: gets all necessary data from command line and calls exec method
     //  exec<OptionName>: execs database reads/writes after getting input from user
 
@@ -23,6 +35,59 @@ class Application {
 
         Application.user.login(username, password);
     }
+
+
+    public static void inputCreateAccount() {
+        System.out.println("Please enter your username:");
+        String username = s.next();
+
+        String password;
+        while(true) {
+            System.out.println("Please enter your password:");
+            password = s.next();
+
+            System.out.println("Please re-enter your password:");
+            String repassword = s.next();
+
+            if (!password.equals(repassword)) {
+                System.out.println("Passwords do not match. Please try again");
+            }
+            else {
+                break;
+            }
+        }
+
+        boolean validEmail = false;
+        String email = "";
+        while(!validEmail) {
+            System.out.println("Please enter your email address:");
+            email = s.next();
+            validEmail = email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}$");
+            if(!validEmail) {
+                System.out.println("Please enter a valid email address.");
+            }
+        }
+
+        System.out.println("Please enter your name:");
+        String name = s.next();
+
+        System.out.println("Please enter your birth year:");
+        int birthyear = s.nextInt();
+
+        System.out.println("Please enter your birth month (as a number from 1-12):");
+        int birthmonth = s.nextInt();
+
+        System.out.println("Please enter your birth date:");
+        int birthdate = s.nextInt();
+
+        LocalDate localDate = LocalDate.of(birthyear, birthmonth, birthdate);
+        Date sqlDate = Date.valueOf(localDate);
+
+        // DO SOME VALIDATION ON INPUT HERE
+
+        User.createAccount(username, password, name, email, sqlDate);
+    }
+
 
     public static void inputUploadNewAlbum() {
         if (!user.isArtist()) {
@@ -57,11 +122,6 @@ class Application {
 
 
     }
-
-    /*
-    public static void deleteAccount() {
-
-    */
 
     // WE PREVENT SQL INJECTIONS BY USING PREPAREDSTATEMENTS
     public static void main ( String [ ] args ) throws Exception
@@ -114,24 +174,46 @@ class Application {
         DAO.getConnection(url, your_userid, your_password);
 
         final String MENU = "Please choose an option from the following:\n" +
-                "1. Login\n" +
+                "1. User settings\n" +
                 "2. \n" +
                 "3. Upload a new album\n" +
                 "4. \n" +
                 "5. \n" +
                 "6. ";
 
+        final String MENU1 = "Please choose an option from the following:\n" +
+                "1. Log in\n" +
+                "2. Create an account\n" +
+                "3. Back";
+
         while(true) {
             System.out.println(MENU);
             int menuOption = s.nextInt();
-            if(menuOption <= 0 || menuOption > 6) {
-                System.out.println("Please choose a valid option");
+
+            if(!validateInputRange(1, 6, menuOption)) {
                 continue;
             }
 
             switch(menuOption) {
                 case 1:
-                    inputLogin();
+                    while(true) {
+                        System.out.println(MENU1);
+
+                        menuOption = s.nextInt();
+
+                        if(!validateInputRange(1, 3, menuOption)) {
+                            continue;
+                        }
+
+                        switch(menuOption) {
+                            case 1:
+                                inputLogin();
+                            case 2:
+
+                            case 3:
+                                break;
+                        }
+                    }
                 case 2:
                     continue;
                 case 3:
@@ -149,7 +231,6 @@ class Application {
                     break;
             }
         }
-
         //statement.close();
         DAO.close();
 
