@@ -3,6 +3,8 @@ import utils.DAO;
 
 import java.sql.* ;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Scanner;
 
 class Application {
@@ -122,6 +124,86 @@ class Application {
 
 
     }
+    
+    public static void inputTopAlbumsByGenre() throws SQLException {
+    	System.out.println("Choose ranking type:");
+    	System.out.println("1. By stream count");
+    	System.out.println("2. By sales");
+    	
+    	int rankingChoice = s.nextInt();
+    	s.nextLine();
+    	if (!validateInputRange(1, 2, rankingChoice)) {
+    		return;
+    	}
+    	
+    	ArrayList<String> genres = new ArrayList<>(Genres.getGenres());
+    	Collections.sort(genres);
+    	
+    	System.out.println("Please choose a genre from the following list:");
+    	for (int i = 0; i < genres.size(); i++) {
+    		System.out.println((i+1) + ". " + genres.get(i));
+    	}
+    	
+    	int genreChoice = s.nextInt();
+    	s.nextLine();
+    	if (!validateInputRange(1, genres.size(), genreChoice)) {
+    		return;
+    	}
+    	String selectedGenre = genres.get(genreChoice - 1);
+  
+    	execTopAlbumsByGenre(selectedGenre, rankingChoice);
+    }
+    
+    public static void execTopAlbumsByGenre(String genre, int rankingChoice) throws SQLException{
+    	Connection con = DAO.getConnection();
+    	
+    	String query = "";
+    	if (rankingChoice == 1) {
+    		query = """
+        			SELECT a.title, COALESCE(SUM(s.nStreams), 0) AS totalStreams
+        			FROM Album a
+        			JOIN isOf i ON a.productID = i.productID
+        			JOIN Songs so ON a.productID = so.productID
+        			LEFT JOIN Streams s
+        				ON so.songTitle = s.songTitle AND so.productID = s.productID
+        			WHERE i.name = ?
+        			GROUP BY a.productID, a.title
+        			ORDER BY totalStreams DESC
+        			FETCH FIRST 10 ROWS ONLY
+        			""";
+    	} else {
+    		query = """
+    				SELECT a.title, COALESCE(SUM(p.price), 0) AS totalSales
+    				FROM Album a
+    				JOIN isOf i ON a.productID = i.productID
+    				JOIN Purchase pu ON a.productID = pu.productID
+    				JOIN Products p ON a.productID = p.productID
+    				WHERE i.name = ?
+    				GROUP BY a.productID, a.title
+    				ORDER BY totalSales DESC
+    				FETCH FIRST 10 ROWS ONLY
+    				""";
+    	}
+    	try (PreparedStatement ps = con.prepareStatement(query)){
+    		ps.setString(1, genre);
+    		ResultSet rs = ps.executeQuery();
+    		System.out.println("\nTop albums for genre: " + genre);
+    		
+    		int i = 1;
+    		while(rs.next()) {
+    			String title = rs.getString("title");
+    			if (rankingChoice == 1) {
+    				int streams = rs.getInt("totalStreams");
+    				System.out.println(i + ". " + title + "-> " + streams + " streams");
+    			} else {
+    				double sales = rs.getDouble("totalSales");
+    				System.out.println(i + ". " + title + "-> $" + sales);
+    			}
+    		}
+    	} catch (SQLException e) {
+    		e.printStackTrace();
+    	}
+    }
 
     // WE PREVENT SQL INJECTIONS BY USING PREPAREDSTATEMENTS
     public static void main ( String [ ] args ) throws Exception
@@ -177,7 +259,7 @@ class Application {
                 "1. User settings\n" +
                 "2. \n" +
                 "3. Upload a new album\n" +
-                "4. \n" +
+                "4. View top albums by genre\n" +
                 "5. \n" +
                 "6. ";
 
@@ -224,7 +306,8 @@ class Application {
                     //      -> get list of genres using Genres.getGenres.toArrayList()
                     //      -> print out list of genres and have user input corresponding number
                     //      -> based on that number, query db for top albums with that genre
-                    continue;
+                    inputTopAlbumsByGenre();
+                	continue;
                 case 5:
                     continue;
                 default:
@@ -342,3 +425,4 @@ class Application {
       con.close ( ) ;
      */
 }
+
