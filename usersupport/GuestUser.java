@@ -11,4 +11,9 @@ public class GuestUser extends UserTemplate {
         return false;
     }
 
+	@Override
+	String getUsername() {
+		return null;
+	}
+
 }
