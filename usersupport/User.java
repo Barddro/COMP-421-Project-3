@@ -44,27 +44,25 @@ public class User {
 
     public void login(String username, String password) throws SQLException {
         String hashedPassword = Security.hashString(password);
-        boolean isArtist = false;
+//        boolean isArtist = false;
+        
+        // previously written presumably for artist logins
+//        String query = "SELECT u.username, a.artistid FROM User u " +
+//                "LEFT JOIN Artists a " +
+//                "ON u.username = a.username " +
+//                "WHERE u.username = ? " +
+//                "AND u.password = ?";
 
-        // do a left join on userid, artistid to get all info, then we can check if userid is null or not
-        String query = "SELECT u.username, a.artistid FROM User u " +
-                "LEFT JOIN Artists a " +
-                "ON u.username = a.username " +
-                "WHERE u.username = ? " +
-                "AND u.password = ?";
+        String query = "SELECT username FROM User " +
+                "WHERE username = ? " +
+                "AND password = ?";
         try (PreparedStatement stmt = DAO.getConnection().prepareStatement(query)) {
             stmt.setString(1, username);
             stmt.setString(2, hashedPassword);
             ResultSet results = stmt.executeQuery();
 
             if (results.next()) {
-                // user exists
-                int artistId = results.getInt("artistid");
-                if (!results.wasNull()) {
-                    // artistid was not null, so user is an artist
-                    isArtist = true;
-                }
-                this.user = new LoggedInUser(username, isArtist);
+                this.user = new LoggedInUser(username, false);
                 System.out.println("Logged in! Welcome, " + username);
             } else {
                 // no user found (invalid username/password)
