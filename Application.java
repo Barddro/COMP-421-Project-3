@@ -2,6 +2,7 @@ import usersupport.User;
 import utils.DAO;
 
 import java.sql.* ;
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,6 +25,77 @@ class Application {
     }
 
 
+    public static String getValidInput(String type) {
+        while (true) {
+            // Birthdate reads its own fields inside the case; all other types read a single line here
+            String input = type.equals("birthdate") ? null : s.nextLine().trim();
+
+            if (input != null && input.isEmpty()) {
+                System.out.println("Input cannot be empty.");
+                continue;
+            }
+
+            switch (type) {
+                case "password":
+                    if (input.matches("^\\S+$")) {
+                        return input;
+                    }
+                    System.out.println("Password cannot contain spaces.");
+                    break;
+
+                case "email":
+                    if (input.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")) {
+                        return input;
+                    }
+                    System.out.println("Please enter a valid email address.");
+                    break;
+
+                case "integer":
+                    if (input.matches("^-?\\d+$")) {
+                        return input;
+                    }
+                    System.out.println("Please enter a valid integer.");
+                    break;
+
+                case "birthdate":
+                    try {
+                        System.out.println("Please enter your birth year:");
+                        int year = Integer.parseInt(s.nextLine().trim());
+
+                        System.out.println("Please enter your birth month (1-12):");
+                        int month = Integer.parseInt(s.nextLine().trim());
+
+                        System.out.println("Please enter your birth day:");
+                        int day = Integer.parseInt(s.nextLine().trim());
+
+                        LocalDate date = LocalDate.of(year, month, day);
+
+                        if (date.isAfter(LocalDate.now())) {
+                            System.out.println("Date of birth cannot be in the future.");
+                            break;
+                        }
+
+                        return date.toString();
+
+                    } catch (NumberFormatException e) {
+                        System.out.println("Please enter valid numbers for the date.");
+                        break;
+                    } catch (DateTimeException e) {
+                        System.out.println("Invalid date. Please try again.");
+                        break;
+                    }
+
+                default:
+                    if (input.matches("^[a-zA-Z0-9 .,'&!?-]+$")) {
+                        return input;
+                    }
+                    System.out.println("Input contains invalid characters. Only letters, numbers, spaces, and basic punctuation are allowed.");
+                    break;
+            }
+        }
+    }
+
+
     // ------------ Functions representing command line options, organized in the following way: ------------ //
     //  input<OptionName>: gets all necessary data from command line and calls exec method
     //  exec<OptionName>: execs database reads/writes after getting input from user
@@ -39,17 +111,18 @@ class Application {
     }
 
 
-    public static void inputCreateAccount() {
+    public static void inputCreateAccount() throws SQLException {
         System.out.println("Please enter your username:");
         String username = s.next();
+        s.nextLine(); // consume trailing newline after s.next()
 
         String password;
         while(true) {
             System.out.println("Please enter your password:");
-            password = s.next();
+            password = getValidInput("password");
 
             System.out.println("Please re-enter your password:");
-            String repassword = s.next();
+            String repassword = getValidInput("password");
 
             if (!password.equals(repassword)) {
                 System.out.println("Passwords do not match. Please try again");
@@ -59,33 +132,14 @@ class Application {
             }
         }
 
-        boolean validEmail = false;
-        String email = "";
-        while(!validEmail) {
-            System.out.println("Please enter your email address:");
-            email = s.next();
-            validEmail = email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}$");
-            if(!validEmail) {
-                System.out.println("Please enter a valid email address.");
-            }
-        }
+        System.out.println("Please enter your email address:");
+        String email = getValidInput("email");
 
         System.out.println("Please enter your name:");
-        String name = s.next();
-
-        System.out.println("Please enter your birth year:");
-        int birthyear = s.nextInt();
-
-        System.out.println("Please enter your birth month (as a number from 1-12):");
-        int birthmonth = s.nextInt();
+        String name = getValidInput("any");
 
         System.out.println("Please enter your birth date:");
-        int birthdate = s.nextInt();
-
-        LocalDate localDate = LocalDate.of(birthyear, birthmonth, birthdate);
-        Date sqlDate = Date.valueOf(localDate);
-
-        // DO SOME VALIDATION ON INPUT HERE
+        Date sqlDate = Date.valueOf(getValidInput("birthdate"));
 
         User.createAccount(username, password, name, email, sqlDate);
     }
@@ -116,6 +170,8 @@ class Application {
 
 
         //... repeat for each field!
+        String artist = ""; // TODO: collect artist input (stub placeholder)
+        String[] songs = new String[0]; // TODO: collect songs input (stub placeholder)
         execUploadNewAlbum(albumTitle, albumGenre, artist, songs);
 
     }
@@ -471,7 +527,7 @@ class Application {
                 "2. Purchace an album" +
                 "3. Upload a new album\n" +
                 "4. View top albums by genre\n" +
-                "5. \n" +
+                "5. Create a playlist\n" +
                 "6. ";
 
         final String MENU1 = "Please choose an option from the following:\n" +
@@ -489,6 +545,7 @@ class Application {
 
             switch(menuOption) {
                 case 1:
+                    menu1_checkpoint:
                     while(true) {
                         System.out.println(MENU1);
 
@@ -501,10 +558,12 @@ class Application {
                         switch(menuOption) {
                             case 1:
                                 inputLogin();
-                            case 2:
-
-                            case 3:
                                 break;
+                            case 2:
+                                inputCreateAccount();
+                                break;
+                            case 3:
+                                break menu1_checkpoint;
                         }
                     }
                 case 2:

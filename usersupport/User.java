@@ -16,21 +16,24 @@ public class User {
     private UserTemplate user;
 
     public static void createAccount(String username, String password, String name, String email, Date sqlDate) throws SQLException {
-        password = Security.hashString(password);
+        String hashedPassword = Security.hashString(password);
         String query = "INSERT INTO User (username, password, name, email, dateOfBirth) " +
                 "VALUES (?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = DAO.getConnection().prepareStatement(query)) {
             stmt.setString(1, username);
-            stmt.setString(2, password);
+            stmt.setString(2, hashedPassword);
             stmt.setString(3, name);
             stmt.setString(4, email);
             stmt.setDate(5, sqlDate);
             stmt.executeUpdate();
+            System.out.println("Account created successfully! You can now log in.");
         }
         catch (SQLException e) {
-            if(!DAO.checkDuplicateInsertion(e, "Account with username " + username + "already exists")) {
-                System.out.println("Error: Failed to create account.");
+            if(!DAO.checkDuplicateInsertion(e, "Account with username " + username + " already exists")) {
+                System.err.println("Error: Failed to create account.");
+                System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+                System.err.println(e.getMessage());
             }
         }
     }
@@ -40,7 +43,7 @@ public class User {
     }
 
     public void login(String username, String password) throws SQLException {
-        password = Security.hashString(password);
+        String hashedPassword = Security.hashString(password);
         boolean isArtist = false;
 
         // do a left join on userid, artistid to get all info, then we can check if userid is null or not
@@ -51,7 +54,7 @@ public class User {
                 "AND u.password = ?";
         try (PreparedStatement stmt = DAO.getConnection().prepareStatement(query)) {
             stmt.setString(1, username);
-            stmt.setString(2, password);
+            stmt.setString(2, hashedPassword);
             ResultSet results = stmt.executeQuery();
 
             if (results.next()) {
@@ -69,7 +72,9 @@ public class User {
             }
         }
         catch (SQLException e) {
-            System.out.println("Error occurred when trying to log in. Please try again");
+            System.err.println("Error occurred when trying to log in. Please try again");
+            System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+            System.err.println(e.getMessage());
         }
 
     }
