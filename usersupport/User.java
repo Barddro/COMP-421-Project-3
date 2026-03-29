@@ -81,4 +81,8 @@ public class User {
     public boolean isArtist() {
         return this.user.isArtist();
     }
+    
+    public String getUsername() {
+    	return this.user.getUsername();
+    }
 }
