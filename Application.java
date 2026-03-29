@@ -24,6 +24,18 @@ class Application {
         return true;
     }
 
+    /**
+     * Returns true if the user is logged in, false otherwise.
+     * If not logged in, prints the provided error message.
+     */
+    public static boolean verifyUserLogin(String error) {
+        if (!user.validate()) {
+            System.out.println(error);
+            return false;
+        }
+        return true;
+    }
+
 
     public static String getValidInput(String type) {
         while (true) {
@@ -711,6 +723,13 @@ class Application {
                 "2. Create an account\n" +
                 "3. Back";
 
+		final String MENU5 = "Please choose an option from the following:\n" +
+				"1. List your playlists\n" +
+				"2. Create a new playlist\n" +
+				"3. Modify an existing playlist\n" +
+				"4. Delete an existing playlist\n" +
+				"5. Back";
+
         while(true) {
             System.out.println(MENU);
             int menuOption = s.nextInt();
@@ -755,7 +774,41 @@ class Application {
                     inputTopAlbumsByGenre();
                 	continue;
                 case 5:
-                    inputCreatePlaylist();
+                    menu5_checkpoint:
+                    while (true) {
+                        if (!verifyUserLogin("You must be logged in to manage playlists.")) {
+                            break menu5_checkpoint;
+                        }
+                        System.out.println(MENU5);
+                        menuOption = s.nextInt();
+
+                        if (!validateInputRange(1, 5, menuOption)) {
+                            continue;
+                        }
+
+                        switch (menuOption) {
+                            case 1:
+                                // TODO: list playlists
+								System.out.println("Error: not implemented");
+//								inputListPlaylists();
+                                break;
+                            case 2:
+                                inputCreatePlaylist();
+                                break;
+                            case 3:
+                                // TODO: modify playlist
+								System.out.println("Error: not implemented");
+//								inputModifyPlaylist();
+                                break;
+                            case 4:
+                                // TODO: delete playlist
+								System.out.println("Error: not implemented");
+//								inputDeletePlaylist();
+                                break;
+                            case 5:
+                                break menu5_checkpoint;
+                        }
+                    }
                     continue;
                 default:
                     break;
@@ -832,44 +885,4 @@ class Application {
          System.out.println ("DONE");
         }
         catch (SQLException e)
-        {
-          sqlCode = e.getErrorCode(); // Get SQLCODE
-          sqlState = e.getSQLState(); // Get SQLSTATE
-
-          // Your code to handle errors comes here;
-          // something more meaningful than a print would be good
-          System.out.println("Code: " + sqlCode + "  sqlState: " + sqlState);
-          System.out.println(e);
-        }
-
-      //Updating a table
-      try
-      {
-        String updateSQL = "UPDATE " + tableName + " SET NAME = \'Mimi\' WHERE id = 3";
-        System.out.println(updateSQL);
-        statement.executeUpdate(updateSQL);
-        System.out.println("DONE");
-
-        // Dropping a table
-        String dropSQL = "DROP TABLE " + tableName;
-        System.out.println ( dropSQL ) ;
-        statement.executeUpdate ( dropSQL ) ;
-        System.out.println ("DONE");
-      }
-      catch (SQLException e)
-      {
-        sqlCode = e.getErrorCode(); // Get SQLCODE
-        sqlState = e.getSQLState(); // Get SQLSTATE
-
-        // Your code to handle errors comes here;
-        // something more meaningful than a print would be good
-        System.out.println("Code: " + sqlCode + "  sqlState: " + sqlState);
-        System.out.println(e);
-      }
-
-      // Finally but importantly close the statement and connection
-      statement.close ( ) ;
-      con.close ( ) ;
-     */
-}
-
+    
