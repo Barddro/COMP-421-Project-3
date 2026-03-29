@@ -262,9 +262,9 @@ class Application {
     	}
     }
     
-    public static void inputPurchaceAlbum() throws SQLException {
+    public static void inputPurchaseAlbum() throws SQLException {
     	if (!user.validate()) {
-    		System.out.println("You must be logged in to make a purchace.");
+    		System.out.println("You must be logged in to make a purchase.");
     		return;
     	}
     	
@@ -298,7 +298,7 @@ class Application {
     	for (int i = 0; i < albums.size(); i++) {
     		System.out.println((i+1) + ". " + albums.get(i));
     	}
-    	System.out.println("Select album number to purchace: ");
+    	System.out.println("Select album number to s: ");
     	int albumChoice = s.nextInt();
     	s.nextLine();
     	
@@ -307,9 +307,9 @@ class Application {
         }
     	
     	String selectedAlbum = albums.get(albumChoice - 1);
-    	executeAlbumPurchace(selectedAlbum);
+    	executeAlbumPurchase(selectedAlbum);
     }
-    public static void executeAlbumPurchace(String selectedAlbum) {
+    public static void executeAlbumPurchase(String selectedAlbum) {
     	Connection con = null;
     	
     	try {	
@@ -363,12 +363,12 @@ class Application {
 	    		}
 	    	}
 	    	
-	    	String insertPurchace = """
-	    			INSERT INTO Purchace (transactionID, username, productID)
+	    	String insertpurchase = """
+	    			INSERT INTO purchase (transactionID, username, productID)
 	    			VALUES (?, ?, ?)
 	    			""";
 	    	
-	    	try (PreparedStatement ps = con.prepareStatement(insertPurchace)){
+	    	try (PreparedStatement ps = con.prepareStatement(insertpurchase)){
 	    		ps.setInt(1, transactionID);
 	    		ps.setString(2, user.getUsername());
 	    		ps.setInt(3, productID);
@@ -376,14 +376,14 @@ class Application {
 	    	}
 	    	//Success
 	    	con.commit();
-	    	System.out.println("Successfully purchaced album: " + selectedAlbum);
+	    	System.out.println("Successfully purchased album: " + selectedAlbum);
     	} catch (SQLException e) {
     		try {
     			if (con != null) con.rollback(); //undo any faults
     		} catch (SQLException ex) {
     			System.err.println("Rollback failed: " + ex.getMessage());
     		}
-    		System.err.println("Purchace failed:");
+    		System.err.println("purchase failed:");
     		System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
     		System.err.println(e.getMessage());
     	} finally {
@@ -453,7 +453,7 @@ class Application {
     	String query = """
     			SELECT a.title, COALESCE(SUM(p.price), 0) AS totalSales
     			FROM Album a
-    			JOIN Purchace pu ON a.productID = pu.productID
+    			JOIN purchase pu ON a.productID = pu.productID
     			JOIN Products p ON a.productID = p.productID
     			GROUP BY a.productID, a.title
     			ORDER BY totalSales DESC
@@ -470,6 +470,182 @@ class Application {
     		e.printStackTrace();
     	}
     	return results;
+    }
+
+    public static void inputCreatePlaylist() {
+        if (!user.validate()) {
+            System.out.println("You must be logged in to create a playlist.");
+            return;
+        }
+
+        s.nextLine(); // consume trailing newline left by menu's nextInt()
+
+        System.out.println("Enter a name for your new playlist:");
+        String playlistName = getValidInput("any");
+
+        execCreatePlaylist(playlistName);
+    }
+
+    public static void execCreatePlaylist(String playlistName) {
+        Connection con;
+        try {
+            con = DAO.getConnection();
+        } catch (SQLException e) {
+            System.err.println("Failed to connect to database.");
+            System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+            return;
+        }
+
+//        insert playlist into Playlist table
+        String insertPlaylist =
+                "INSERT INTO Playlist(playlistID, name, username) " +
+                "VALUES ((SELECT COALESCE(MAX(playlistID), 0) + 1 FROM Playlist), ?, ?)";
+
+        try (PreparedStatement ps = con.prepareStatement(insertPlaylist)) {
+            ps.setString(1, playlistName);
+            ps.setString(2, user.getUsername());
+            ps.executeUpdate();
+            System.out.println("Playlist \"" + playlistName + "\" created successfully!");
+        } catch (SQLException e) {
+            System.err.println("Failed to create playlist.");
+            System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+            System.err.println(e.getMessage());
+            return;
+        }
+
+//		get the new playlistID (not very robust since there can be race condition of two users
+//		creating playlists at the same time
+        int newPlaylistID = -1;
+        String getPlaylistID = "SELECT MAX(playlistID) FROM Playlist WHERE username = ?";
+        try (PreparedStatement ps = con.prepareStatement(getPlaylistID)) {
+            ps.setString(1, user.getUsername());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                newPlaylistID = rs.getInt(1);
+            } else {
+                System.err.println("Failed to retrieve new playlist ID.");
+                return;
+            }
+        } catch (SQLException e) {
+            System.err.println("Failed to retrieve playlist ID.");
+            System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+            return;
+        }
+
+//		add songs based on search string, join Album and Artists to display them as well
+        int songsAdded = 0;
+        while (true) {
+            System.out.println("Enter a song title to search (or part of a title):");
+            String searchTerm = s.nextLine();
+
+            String searchSongs =
+                    "SELECT s.songTitle, s.productID, a.title AS albumTitle, ar.name AS artistName, s.length " +
+                    "FROM Songs s " +
+                    "JOIN Album a ON s.productID = a.productID " +
+                    "JOIN Artists ar ON a.artistID = ar.artistid " +
+                    "WHERE LOWER(s.songTitle) LIKE LOWER(?)";
+
+            ArrayList<String[]> results = new ArrayList<>();
+            try (PreparedStatement ps = con.prepareStatement(searchSongs)) {
+                ps.setString(1, "%" + searchTerm + "%");
+                ResultSet rs = ps.executeQuery();
+                while (rs.next()) {
+                    String[] row = {
+                        rs.getString("songTitle"),
+                        String.valueOf(rs.getInt("productID")),
+                        rs.getString("albumTitle"),
+                        rs.getString("artistName"),
+                        rs.getString("length")
+                    };
+                    results.add(row);
+                }
+            } catch (SQLException e) {
+                System.err.println("Error searching for songs.");
+                System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+                System.out.println("Add another song? (y/n):");
+                if (!s.nextLine().trim().equalsIgnoreCase("y")) break;
+                continue;
+            }
+
+            if (results.isEmpty()) {
+                System.out.println("No songs found matching \"" + searchTerm + "\". Try a different search.");
+                System.out.println("Add another song? (y/n):");
+                if (!s.nextLine().trim().equalsIgnoreCase("y")) break;
+                continue;
+            }
+
+            System.out.println("Search results:");
+            for (int i = 0; i < results.size(); i++) {
+                String[] row = results.get(i);
+                System.out.println((i + 1) + ". \"" + row[0] + "\" | Album: " + row[2] +
+                        " | Artist: " + row[3] + " | Length: " + row[4] + "s");
+            }
+
+            System.out.println("Enter the number of the song to add (or 0 to cancel):");
+            int choice;
+            try {
+                choice = Integer.parseInt(s.nextLine().trim());
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+                System.out.println("Add another song? (y/n):");
+                if (!s.nextLine().trim().equalsIgnoreCase("y")) break;
+                continue;
+            }
+
+            if (choice == 0) {
+                System.out.println("Add another song? (y/n):");
+                if (!s.nextLine().trim().equalsIgnoreCase("y")) break;
+                continue;
+            }
+
+            if (!validateInputRange(1, results.size(), choice)) {
+                System.out.println("Add another song? (y/n):");
+                if (!s.nextLine().trim().equalsIgnoreCase("y")) break;
+                continue;
+            }
+
+            String[] selectedSong = results.get(choice - 1);
+            String songTitle = selectedSong[0];
+            int productID = Integer.parseInt(selectedSong[1]);
+
+            // Check for duplicate before inserting
+            String checkDuplicate =
+                    "SELECT 1 FROM Contains WHERE playlistID = ? AND songTitle = ? AND productID = ?";
+            boolean alreadyInPlaylist = false;
+            try (PreparedStatement ps = con.prepareStatement(checkDuplicate)) {
+                ps.setInt(1, newPlaylistID);
+                ps.setString(2, songTitle);
+                ps.setInt(3, productID);
+                ResultSet rs = ps.executeQuery();
+                alreadyInPlaylist = rs.next();
+            } catch (SQLException e) {
+                System.err.println("Error checking for duplicate song.");
+                System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+            }
+
+            if (alreadyInPlaylist) {
+                System.out.println("Song already in playlist.");
+            } else {
+                String insertSong =
+                        "INSERT INTO Contains(playlistID, songTitle, productID) VALUES (?, ?, ?)";
+                try (PreparedStatement ps = con.prepareStatement(insertSong)) {
+                    ps.setInt(1, newPlaylistID);
+                    ps.setString(2, songTitle);
+                    ps.setInt(3, productID);
+                    ps.executeUpdate();
+                    System.out.println("Added \"" + songTitle + "\" to your playlist.");
+                    songsAdded++;
+                } catch (SQLException e) {
+                    System.err.println("Error adding song to playlist.");
+                    System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+                }
+            }
+
+            System.out.println("Add another song? (y/n):");
+            if (!s.nextLine().trim().equalsIgnoreCase("y")) break;
+        }
+
+        System.out.println("\nDone! Playlist \"" + playlistName + "\" has " + songsAdded + " song(s).");
     }
 
     // WE PREVENT SQL INJECTIONS BY USING PREPAREDSTATEMENTS
@@ -524,7 +700,7 @@ class Application {
 
         final String MENU = "Please choose an option from the following:\n" +
                 "1. User settings\n" +
-                "2. Purchace an album" +
+                "2. Purchase an album\n" +
                 "3. Upload a new album\n" +
                 "4. View top albums by genre\n" +
                 "5. Create a playlist\n" +
@@ -558,10 +734,10 @@ class Application {
                         switch(menuOption) {
                             case 1:
                                 inputLogin();
-                                break;
+                                break menu1_checkpoint;
                             case 2:
                                 inputCreateAccount();
-                                break;
+                                break menu1_checkpoint;
                             case 3:
                                 break menu1_checkpoint;
                         }
@@ -579,13 +755,14 @@ class Application {
                     inputTopAlbumsByGenre();
                 	continue;
                 case 5:
+                    inputCreatePlaylist();
                     continue;
                 default:
                     break;
             }
         }
         //statement.close();
-        DAO.close();
+        //DAO.close(); // unreachable due to while(true) loop above
 
     }
 
