@@ -18,6 +18,11 @@ public class LoggedInUser extends UserTemplate {
     boolean isArtist() {
         return this.isArtist;
     }
+    
+    @Override
+    String getUsername() {
+    	return this.username;
+    }
 
     // may want to move artist functionality here for simplicity, and just have a validateArtist method, or an account-type field
 }
