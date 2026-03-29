@@ -17,7 +17,7 @@ class Application {
     // ------------ Helpers ------------ //
 
     public static boolean validateInputRange(int lo, int hi, int menuOption) {
-        if(menuOption < lo || menuOption > hi) {
+        if (menuOption < lo || menuOption > hi) {
             System.out.println("Please choose a valid option");
             return false;
         }
@@ -129,7 +129,7 @@ class Application {
         s.nextLine(); // consume trailing newline after s.next()
 
         String password;
-        while(true) {
+        while (true) {
             System.out.println("Please enter your password:");
             password = getValidInput("password");
 
@@ -138,8 +138,7 @@ class Application {
 
             if (!password.equals(repassword)) {
                 System.out.println("Passwords do not match. Please try again");
-            }
-            else {
+            } else {
                 break;
             }
         }
@@ -180,7 +179,6 @@ class Application {
         String valid;
 
 
-
         //... repeat for each field!
         String artist = ""; // TODO: collect artist input (stub placeholder)
         String[] songs = new String[0]; // TODO: collect songs input (stub placeholder)
@@ -192,331 +190,310 @@ class Application {
 
 
     }
-    
+
     public static void inputTopAlbumsByGenre() throws SQLException {
-    	System.out.println("Choose ranking type:");
-    	System.out.println("1. By stream count");
-    	System.out.println("2. By sales");
-    	
-    	int rankingChoice = s.nextInt();
-    	s.nextLine();
-    	if (!validateInputRange(1, 2, rankingChoice)) {
-    		return;
-    	}
-    	
-    	ArrayList<String> genres = new ArrayList<>(Genres.getGenres());
-    	Collections.sort(genres);
-    	
-    	System.out.println("Please choose a genre from the following list:");
-    	for (int i = 0; i < genres.size(); i++) {
-    		System.out.println((i+1) + ". " + genres.get(i));
-    	}
-    	
-    	int genreChoice = s.nextInt();
-    	s.nextLine();
-    	if (!validateInputRange(1, genres.size(), genreChoice)) {
-    		return;
-    	}
-    	String selectedGenre = genres.get(genreChoice - 1);
-  
-    	execTopAlbumsByGenre(selectedGenre, rankingChoice);
-    }
-    
-    public static void execTopAlbumsByGenre(String genre, int rankingChoice) throws SQLException{
-    	Connection con = DAO.getConnection();
-    	
-    	String query = "";
-    	if (rankingChoice == 1) {
-    		query = """
-        			SELECT a.title, COALESCE(SUM(s.nStreams), 0) AS totalStreams
-        			FROM Album a
-        			JOIN isOf i ON a.productID = i.productID
-        			JOIN Songs so ON a.productID = so.productID
-        			LEFT JOIN Streams s
-        				ON so.songTitle = s.songTitle AND so.productID = s.productID
-        			WHERE i.name = ?
-        			GROUP BY a.productID, a.title
-        			ORDER BY totalStreams DESC
-        			FETCH FIRST 10 ROWS ONLY
-        			""";
-    	} else {
-    		query = """
-    				SELECT a.title, COALESCE(SUM(p.price), 0) AS totalSales
-    				FROM Album a
-    				JOIN isOf i ON a.productID = i.productID
-    				JOIN Purchase pu ON a.productID = pu.productID
-    				JOIN Products p ON a.productID = p.productID
-    				WHERE i.name = ?
-    				GROUP BY a.productID, a.title
-    				ORDER BY totalSales DESC
-    				FETCH FIRST 10 ROWS ONLY
-    				""";
-    	}
-    	try (PreparedStatement ps = con.prepareStatement(query)){
-    		ps.setString(1, genre);
-    		ResultSet rs = ps.executeQuery();
-    		System.out.println("\nTop albums for genre: " + genre);
-    		
-    		int i = 1;
-    		while(rs.next()) {
-    			String title = rs.getString("title");
-    			if (rankingChoice == 1) {
-    				int streams = rs.getInt("totalStreams");
-    				System.out.println(i + ". " + title + "-> " + streams + " streams");
-    			} else {
-    				double sales = rs.getDouble("totalSales");
-    				System.out.println(i + ". " + title + "-> $" + sales);
-    			}
-    			i++;
-    		}
-    	} catch (SQLException e) {
-    		e.printStackTrace();
-    	}
-    }
-    
-    public static void inputPurchaseAlbum() throws SQLException {
-    	if (!user.validate()) {
-    		System.out.println("You must be logged in to make a purchase.");
-    		return;
-    	}
-    	
-    	System.out.println("Choose a filter method:");
-    	System.out.println("1. Search by name");
-    	System.out.println("2. Search by artist");
-    	System.out.println("3. Search by best-sellers");
-    	
-    	int choice = s.nextInt();
-    	s.nextLine();
-    	
-    	if (!validateInputRange(1, 3, choice)) return;
-    	
-    	ArrayList<String> albums = new ArrayList<>();
-    	
-    	switch(choice) {
-    		case 1: 
-    			albums = filterAlbumsByName();
-    		case 2:
-    			albums = filterAlbumsByArtist();
-    		case 3:
-    			albums = filterAlbumsByBestselling();
-    		default:
-    			System.out.println("Invalid choice.");
-    	}
-    	if (albums.isEmpty()) {
-    		System.out.println("No albums found.");
-    		return;
-    	}
-    	System.out.println("Filter results:");
-    	for (int i = 0; i < albums.size(); i++) {
-    		System.out.println((i+1) + ". " + albums.get(i));
-    	}
-    	System.out.println("Select album number to s: ");
-    	int albumChoice = s.nextInt();
-    	s.nextLine();
-    	
-    	if (!validateInputRange(1, albums.size(), albumChoice)) {
+        System.out.println("Choose ranking type:");
+        System.out.println("1. By stream count");
+        System.out.println("2. By sales");
+
+        int rankingChoice = s.nextInt();
+        s.nextLine();
+        if (!validateInputRange(1, 2, rankingChoice)) {
             return;
         }
-    	
-    	String selectedAlbum = albums.get(albumChoice - 1);
-    	executeAlbumPurchase(selectedAlbum);
+
+        ArrayList<String> genres = new ArrayList<>(Genres.getGenres());
+        Collections.sort(genres);
+
+        System.out.println("Please choose a genre from the following list:");
+        for (int i = 0; i < genres.size(); i++) {
+            System.out.println((i + 1) + ". " + genres.get(i));
+        }
+
+        int genreChoice = s.nextInt();
+        s.nextLine();
+        if (!validateInputRange(1, genres.size(), genreChoice)) {
+            return;
+        }
+        String selectedGenre = genres.get(genreChoice - 1);
+
+        execTopAlbumsByGenre(selectedGenre, rankingChoice);
     }
+
+    public static void execTopAlbumsByGenre(String genre, int rankingChoice) throws SQLException {
+        Connection con = DAO.getConnection();
+
+        String query = "";
+        if (rankingChoice == 1) {
+            query = """
+                    SELECT a.title, COALESCE(SUM(s.nStreams), 0) AS totalStreams
+                    FROM Album a
+                    JOIN isOf i ON a.productID = i.productID
+                    JOIN Songs so ON a.productID = so.productID
+                    LEFT JOIN Streams s
+                    	ON so.songTitle = s.songTitle AND so.productID = s.productID
+                    WHERE i.name = ?
+                    GROUP BY a.productID, a.title
+                    ORDER BY totalStreams DESC
+                    FETCH FIRST 10 ROWS ONLY
+                    """;
+        } else {
+            query = """
+                    SELECT a.title, COALESCE(SUM(p.price), 0) AS totalSales
+                    FROM Album a
+                    JOIN isOf i ON a.productID = i.productID
+                    JOIN Purchase pu ON a.productID = pu.productID
+                    JOIN Products p ON a.productID = p.productID
+                    WHERE i.name = ?
+                    GROUP BY a.productID, a.title
+                    ORDER BY totalSales DESC
+                    FETCH FIRST 10 ROWS ONLY
+                    """;
+        }
+        try (PreparedStatement ps = con.prepareStatement(query)) {
+            ps.setString(1, genre);
+            ResultSet rs = ps.executeQuery();
+            System.out.println("\nTop albums for genre: " + genre);
+
+            int i = 1;
+            while (rs.next()) {
+                String title = rs.getString("title");
+                if (rankingChoice == 1) {
+                    int streams = rs.getInt("totalStreams");
+                    System.out.println(i + ". " + title + "-> " + streams + " streams");
+                } else {
+                    double sales = rs.getDouble("totalSales");
+                    System.out.println(i + ". " + title + "-> $" + sales);
+                }
+                i++;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void inputPurchaseAlbum() throws SQLException {
+        if (!user.validate()) {
+            System.out.println("You must be logged in to make a purchase.");
+            return;
+        }
+
+        System.out.println("Choose a filter method:");
+        System.out.println("1. Search by name");
+        System.out.println("2. Search by artist");
+        System.out.println("3. Search by best-sellers");
+
+        int choice = s.nextInt();
+        s.nextLine();
+
+        if (!validateInputRange(1, 3, choice)) return;
+
+        ArrayList<String> albums = new ArrayList<>();
+
+        switch (choice) {
+            case 1:
+                albums = filterAlbumsByName();
+            case 2:
+                albums = filterAlbumsByArtist();
+            case 3:
+                albums = filterAlbumsByBestselling();
+            default:
+                System.out.println("Invalid choice.");
+        }
+        if (albums.isEmpty()) {
+            System.out.println("No albums found.");
+            return;
+        }
+        System.out.println("Filter results:");
+        for (int i = 0; i < albums.size(); i++) {
+            System.out.println((i + 1) + ". " + albums.get(i));
+        }
+        System.out.println("Select album number to s: ");
+        int albumChoice = s.nextInt();
+        s.nextLine();
+
+        if (!validateInputRange(1, albums.size(), albumChoice)) {
+            return;
+        }
+
+        String selectedAlbum = albums.get(albumChoice - 1);
+        executeAlbumPurchase(selectedAlbum);
+    }
+
     public static void executeAlbumPurchase(String selectedAlbum) {
-    	Connection con = null;
-    	
-    	try {	
-    		con = DAO.getConnection();
-    		con.setAutoCommit(false);
-    	
-	    	String getAlbumQuery = """
-	    			SELECT a.productID, p.price
-	    			From Album a
-	    			JOIN Products p ON a.productID = p.productID
-	    			WHERE a.title = ?
-	    			""";
-	    	int transactionID = -1;
-	    	int productID = -1;
-	    	double price = -1;
-	    	
-	    	try (PreparedStatement ps = con.prepareStatement(getAlbumQuery)){
-	    		ps.setString(1, selectedAlbum);
-	    		ResultSet rs = ps.executeQuery();
-	    		
-	    		if (!rs.next()) {
-	    			throw new SQLException("Album not found.");
-	    		}
-	    		productID = rs.getInt("productID");
-	    		price = rs.getDouble("price");
-	    	}
-	    	
-	    	//Make the next product ID
-	    	String getMaxID = "SELECT COALESCE(MAX(transactionID), 0) FROM Transactions";
-	    	try (Statement stmt = con.createStatement();
-	    			ResultSet rs = stmt.executeQuery(getMaxID)) {
-	    		rs.next();
-	    		transactionID = rs.getInt(1) + 1;
-	    	}
-	    	
-	    	//Now we can insert into Transactions
-	    	String insertTransaction = """
-	    			INSERT INTO Transactions (transactionID, price, date)
-	    			VALUES (?, ?, CURRENT_DATE)
-	    			""";
-	    	try (PreparedStatement ps = con.prepareStatement(insertTransaction)){
-	    		ps.setInt(1, transactionID);
-	    		ps.setDouble(2, price);
-	    		ps.executeUpdate();
-	    		
-	    		ResultSet keys = ps.getGeneratedKeys();
-	    		if (keys.next()) {
-	    			transactionID = keys.getInt(1);
-	    		} else {
-	    			throw new SQLException("Failed to retrieve transactionID.");
-	    		}
-	    	}
-	    	
-	    	String insertpurchase = """
-	    			INSERT INTO purchase (transactionID, username, productID)
-	    			VALUES (?, ?, ?)
-	    			""";
-	    	
-	    	try (PreparedStatement ps = con.prepareStatement(insertpurchase)){
-	    		ps.setInt(1, transactionID);
-	    		ps.setString(2, user.getUsername());
-	    		ps.setInt(3, productID);
-	    		ps.executeUpdate();
-	    	}
-	    	//Success
-	    	con.commit();
-	    	System.out.println("Successfully purchased album: " + selectedAlbum);
-    	} catch (SQLException e) {
-    		try {
-    			if (con != null) con.rollback(); //undo any faults
-    		} catch (SQLException ex) {
-    			System.err.println("Rollback failed: " + ex.getMessage());
-    		}
-    		System.err.println("purchase failed:");
-    		System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
-    		System.err.println(e.getMessage());
-    	} finally {
-    		try {
-    			if (con != null) con.setAutoCommit(true);
-    		} catch (SQLException e) {
+        Connection con = null;
+
+        try {
+            con = DAO.getConnection();
+            con.setAutoCommit(false);
+
+            String getAlbumQuery = """
+                    SELECT a.productID, p.price
+                    From Album a
+                    JOIN Products p ON a.productID = p.productID
+                    WHERE a.title = ?
+                    """;
+            int transactionID = -1;
+            int productID = -1;
+            double price = -1;
+
+            try (PreparedStatement ps = con.prepareStatement(getAlbumQuery)) {
+                ps.setString(1, selectedAlbum);
+                ResultSet rs = ps.executeQuery();
+
+                if (!rs.next()) {
+                    throw new SQLException("Album not found.");
+                }
+                productID = rs.getInt("productID");
+                price = rs.getDouble("price");
+            }
+
+            //Make the next product ID
+            String getMaxID = "SELECT COALESCE(MAX(transactionID), 0) FROM Transactions";
+            try (Statement stmt = con.createStatement();
+                 ResultSet rs = stmt.executeQuery(getMaxID)) {
+                rs.next();
+                transactionID = rs.getInt(1) + 1;
+            }
+
+            //Now we can insert into Transactions
+            String insertTransaction = """
+                    INSERT INTO Transactions (transactionID, price, date)
+                    VALUES (?, ?, CURRENT_DATE)
+                    """;
+            try (PreparedStatement ps = con.prepareStatement(insertTransaction)) {
+                ps.setInt(1, transactionID);
+                ps.setDouble(2, price);
+                ps.executeUpdate();
+
+                ResultSet keys = ps.getGeneratedKeys();
+                if (keys.next()) {
+                    transactionID = keys.getInt(1);
+                } else {
+                    throw new SQLException("Failed to retrieve transactionID.");
+                }
+            }
+
+            String insertpurchase = """
+                    INSERT INTO purchase (transactionID, username, productID)
+                    VALUES (?, ?, ?)
+                    """;
+
+            try (PreparedStatement ps = con.prepareStatement(insertpurchase)) {
+                ps.setInt(1, transactionID);
+                ps.setString(2, user.getUsername());
+                ps.setInt(3, productID);
+                ps.executeUpdate();
+            }
+            //Success
+            con.commit();
+            System.out.println("Successfully purchased album: " + selectedAlbum);
+        } catch (SQLException e) {
+            try {
+                if (con != null) con.rollback(); //undo any faults
+            } catch (SQLException ex) {
+                System.err.println("Rollback failed: " + ex.getMessage());
+            }
+            System.err.println("purchase failed:");
+            System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+            System.err.println(e.getMessage());
+        } finally {
+            try {
+                if (con != null) con.setAutoCommit(true);
+            } catch (SQLException e) {
                 System.err.println("Error resetting auto-commit.");
             }
-    	}
+        }
     }
-    
-    public static ArrayList<String> filterAlbumsByName() throws SQLException {
-    	System.out.println("Enter a keyword to search album titles");
-    	String keyword = s.nextLine().toLowerCase();
-    	
-    	ArrayList<String> results = new ArrayList<>();
-    	
-    	String query = """
-    			SELECT title
-    			FROM Album
-    			WHERE LOWER(title) LIKE ?
-    			ORDER BY title
-    			""";
-    	try(PreparedStatement ps = DAO.getConnection().prepareStatement(query)){
-    		ps.setString(1, "%" + keyword + "%");
-    		
-    		ResultSet rs = ps.executeQuery();
-    		while (rs.next()) {
-    			String title = rs.getString("title");
-    			results.add(title);	
-    		}
-    	} catch (SQLException e) {
-    		e.printStackTrace();
-    	}
-    	return results;
-    }
-    public static ArrayList<String> filterAlbumsByArtist() throws SQLException {
-    	System.out.println("Enter artist name to search for:");
-    	String keyword = s.nextLine().toLowerCase();
-    	
-    	ArrayList<String> results = new ArrayList<>();
-    	
-    	String query = """
-    			SELECT title
-    			FROM Album
-    			WHERE LOWER(artist) LIKE ?
-    			ORDER BY title 
-    			""";
-    	try(PreparedStatement ps = DAO.getConnection().prepareStatement(query)){
-    		ps.setString(1, "%" + keyword + "%");
-    		
-    		ResultSet rs = ps.executeQuery();
-    		while (rs.next()) {
-    			String title = rs.getString("title");
-    			results.add(title);
-    		}
 
-    	} catch (SQLException e) {
-    		e.printStackTrace();
-    	}
-    	return results;
-    	
-    }
-    public static ArrayList<String> filterAlbumsByBestselling() throws SQLException {
-    	ArrayList<String> results = new ArrayList<>();
-    	
-    	String query = """
-    			SELECT a.title, COALESCE(SUM(p.price), 0) AS totalSales
-    			FROM Album a
-    			JOIN purchase pu ON a.productID = pu.productID
-    			JOIN Products p ON a.productID = p.productID
-    			GROUP BY a.productID, a.title
-    			ORDER BY totalSales DESC
-    			FETCH FIRST 10 ROWS ONLY
-    			""";
-    	
-    	try (PreparedStatement ps = DAO.getConnection().prepareStatement(query)) {
+    public static ArrayList<String> filterAlbumsByName() throws SQLException {
+        System.out.println("Enter a keyword to search album titles");
+        String keyword = s.nextLine().toLowerCase();
+
+        ArrayList<String> results = new ArrayList<>();
+
+        String query = """
+                SELECT title
+                FROM Album
+                WHERE LOWER(title) LIKE ?
+                ORDER BY title
+                """;
+        try (PreparedStatement ps = DAO.getConnection().prepareStatement(query)) {
+            ps.setString(1, "%" + keyword + "%");
+
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 String title = rs.getString("title");
                 results.add(title);
             }
         } catch (SQLException e) {
-    		e.printStackTrace();
-    	}
-    	return results;
+            e.printStackTrace();
+        }
+        return results;
+    }
+
+    public static ArrayList<String> filterAlbumsByArtist() throws SQLException {
+        System.out.println("Enter artist name to search for:");
+        String keyword = s.nextLine().toLowerCase();
+
+        ArrayList<String> results = new ArrayList<>();
+
+        String query = """
+                SELECT title
+                FROM Album
+                WHERE LOWER(artist) LIKE ?
+                ORDER BY title 
+                """;
+        try (PreparedStatement ps = DAO.getConnection().prepareStatement(query)) {
+            ps.setString(1, "%" + keyword + "%");
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                String title = rs.getString("title");
+                results.add(title);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return results;
+
+    }
+
+    public static ArrayList<String> filterAlbumsByBestselling() throws SQLException {
+        ArrayList<String> results = new ArrayList<>();
+
+        String query = """
+                SELECT a.title, COALESCE(SUM(p.price), 0) AS totalSales
+                FROM Album a
+                JOIN purchase pu ON a.productID = pu.productID
+                JOIN Products p ON a.productID = p.productID
+                GROUP BY a.productID, a.title
+                ORDER BY totalSales DESC
+                FETCH FIRST 10 ROWS ONLY
+                """;
+
+        try (PreparedStatement ps = DAO.getConnection().prepareStatement(query)) {
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                String title = rs.getString("title");
+                results.add(title);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return results;
     }
 
     public static void inputCreatePlaylist() {
-        if (!user.validate()) {
-            System.out.println("You must be logged in to create a playlist.");
-            return;
-        }
-
         s.nextLine(); // consume trailing newline left by menu's nextInt()
 
         System.out.println("Enter a name for your new playlist:");
         String playlistName = getValidInput("any");
 
-        execCreatePlaylist(playlistName);
-    }
-
-    public static void execCreatePlaylist(String playlistName) {
-        Connection con;
+        int playlistID;
         try {
-            con = DAO.getConnection();
-        } catch (SQLException e) {
-            System.err.println("Failed to connect to database.");
-            System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
-            return;
-        }
-
-//        insert playlist into Playlist table
-        String insertPlaylist =
-                "INSERT INTO Playlist(playlistID, name, username) " +
-                "VALUES ((SELECT COALESCE(MAX(playlistID), 0) + 1 FROM Playlist), ?, ?)";
-
-        try (PreparedStatement ps = con.prepareStatement(insertPlaylist)) {
-            ps.setString(1, playlistName);
-            ps.setString(2, user.getUsername());
-            ps.executeUpdate();
+            playlistID = Playlist.create(playlistName, user.getUsername());
             System.out.println("Playlist \"" + playlistName + "\" created successfully!");
         } catch (SQLException e) {
             System.err.println("Failed to create playlist.");
@@ -525,52 +502,19 @@ class Application {
             return;
         }
 
-//		get the new playlistID (not very robust since there can be race condition of two users
-//		creating playlists at the same time
-        int newPlaylistID = -1;
-        String getPlaylistID = "SELECT MAX(playlistID) FROM Playlist WHERE username = ?";
-        try (PreparedStatement ps = con.prepareStatement(getPlaylistID)) {
-            ps.setString(1, user.getUsername());
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                newPlaylistID = rs.getInt(1);
-            } else {
-                System.err.println("Failed to retrieve new playlist ID.");
-                return;
-            }
-        } catch (SQLException e) {
-            System.err.println("Failed to retrieve playlist ID.");
-            System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+        if (playlistID == -1) {
+            System.err.println("Failed to retrieve new playlist ID.");
             return;
         }
 
-//		add songs based on search string, join Album and Artists to display them as well
         int songsAdded = 0;
         while (true) {
             System.out.println("Enter a song title to search (or part of a title):");
             String searchTerm = s.nextLine();
 
-            String searchSongs =
-                    "SELECT s.songTitle, s.productID, a.title AS albumTitle, ar.name AS artistName, s.length " +
-                    "FROM Songs s " +
-                    "JOIN Album a ON s.productID = a.productID " +
-                    "JOIN Artists ar ON a.artistID = ar.artistid " +
-                    "WHERE LOWER(s.songTitle) LIKE LOWER(?)";
-
-            ArrayList<String[]> results = new ArrayList<>();
-            try (PreparedStatement ps = con.prepareStatement(searchSongs)) {
-                ps.setString(1, "%" + searchTerm + "%");
-                ResultSet rs = ps.executeQuery();
-                while (rs.next()) {
-                    String[] row = {
-                        rs.getString("songTitle"),
-                        String.valueOf(rs.getInt("productID")),
-                        rs.getString("albumTitle"),
-                        rs.getString("artistName"),
-                        rs.getString("length")
-                    };
-                    results.add(row);
-                }
+            ArrayList<String[]> results;
+            try {
+                results = Playlist.searchSongs(searchTerm);
             } catch (SQLException e) {
                 System.err.println("Error searching for songs.");
                 System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
@@ -620,37 +564,17 @@ class Application {
             String songTitle = selectedSong[0];
             int productID = Integer.parseInt(selectedSong[1]);
 
-            // Check for duplicate before inserting
-            String checkDuplicate =
-                    "SELECT 1 FROM Contains WHERE playlistID = ? AND songTitle = ? AND productID = ?";
-            boolean alreadyInPlaylist = false;
-            try (PreparedStatement ps = con.prepareStatement(checkDuplicate)) {
-                ps.setInt(1, newPlaylistID);
-                ps.setString(2, songTitle);
-                ps.setInt(3, productID);
-                ResultSet rs = ps.executeQuery();
-                alreadyInPlaylist = rs.next();
-            } catch (SQLException e) {
-                System.err.println("Error checking for duplicate song.");
-                System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
-            }
-
-            if (alreadyInPlaylist) {
-                System.out.println("Song already in playlist.");
-            } else {
-                String insertSong =
-                        "INSERT INTO Contains(playlistID, songTitle, productID) VALUES (?, ?, ?)";
-                try (PreparedStatement ps = con.prepareStatement(insertSong)) {
-                    ps.setInt(1, newPlaylistID);
-                    ps.setString(2, songTitle);
-                    ps.setInt(3, productID);
-                    ps.executeUpdate();
+            try {
+                if (Playlist.containsSong(playlistID, songTitle, productID)) {
+                    System.out.println("Song already in playlist.");
+                } else {
+                    Playlist.addSong(playlistID, songTitle, productID);
                     System.out.println("Added \"" + songTitle + "\" to your playlist.");
                     songsAdded++;
-                } catch (SQLException e) {
-                    System.err.println("Error adding song to playlist.");
-                    System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
                 }
+            } catch (SQLException e) {
+                System.err.println("Error adding song to playlist.");
+                System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
             }
 
             System.out.println("Add another song? (y/n):");
@@ -661,21 +585,23 @@ class Application {
     }
 
     // WE PREVENT SQL INJECTIONS BY USING PREPAREDSTATEMENTS
-    public static void main ( String [ ] args ) throws Exception
-    {
-      // Unique table names.  Either the user supplies a unique identifier as a command line argument, or the program makes one up.
+    public static void main(String[] args) throws Exception {
+        // Unique table names.  Either the user supplies a unique identifier as a command line argument, or the program makes one up.
         String tableName = "";
-        int sqlCode=0;      // Variable to hold SQLCODE
-        String sqlState="00000";  // Variable to hold SQLSTATE
+        int sqlCode = 0;      // Variable to hold SQLCODE
+        String sqlState = "00000";  // Variable to hold SQLSTATE
 
-        if ( args.length > 0 )
-            tableName += args [ 0 ] ;
+        if (args.length > 0)
+            tableName += args[0];
         else
-          tableName += "exampletbl";
+            tableName += "exampletbl";
 
         // Register the driver.  You must register the driver before you can use it.
-        try { DriverManager.registerDriver ( new com.ibm.db2.jcc.DB2Driver() ) ; }
-        catch (Exception cnfe){ System.out.println("Class not found"); }
+        try {
+            DriverManager.registerDriver(new com.ibm.db2.jcc.DB2Driver());
+        } catch (Exception cnfe) {
+            System.out.println("Class not found");
+        }
 
         // This is the url you must use for DB2.
         //Note: This url may not valid now ! Check for the correct year and semester and server name.
@@ -772,7 +698,7 @@ class Application {
                     //      -> print out list of genres and have user input corresponding number
                     //      -> based on that number, query db for top albums with that genre
                     inputTopAlbumsByGenre();
-                	continue;
+                    continue;
                 case 5:
                     menu5_checkpoint:
                     while (true) {
@@ -885,4 +811,7 @@ class Application {
          System.out.println ("DONE");
         }
         catch (SQLException e)
-    
+
+
+       */
+}
