@@ -147,4 +147,22 @@ class UI {
 
         User.createAccount(username, password, name, email, sqlDate);
     }
+
+    public static void inputBecomeArtist() {
+        if (!user.validate()) {
+            System.out.println("You must be logged in to become an artist.");
+            waitForEnter();
+            return;
+        }
+        if (user.isArtist()) {
+            System.out.println("Your account is already an artist account.");
+            UI.s.nextLine();
+            waitForEnter();
+            return;
+        }
+        System.out.println("Please enter your artist name:");
+        String artistName = getValidInput("any");
+        user.becomeArtist(artistName);
+        waitForEnter();
+    }
 }

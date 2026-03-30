@@ -29,15 +29,25 @@ public class Album {
         System.out.println("Please enter the name of the album:");
         String albumTitle = UI.s.nextLine().trim();
 
-        boolean validGenre = false;
-        String albumGenre = "";
-        while (!validGenre) {
-            System.out.println("Please enter the genre of the album from the following list:\n"
-                    + String.join("\n", Genres.getGenres()));
-            albumGenre = UI.s.nextLine().trim().toLowerCase();
-            validGenre = Genres.validateGenre(albumGenre);
-            if (!validGenre) System.out.println("Invalid genre. Please try again.");
+        ArrayList<String> genreList = new ArrayList<>(Genres.getGenres());
+        Collections.sort(genreList);
+
+        System.out.println("Please choose a genre:");
+        for (int i = 0; i < genreList.size(); i++) {
+            System.out.println((i + 1) + ". " + genreList.get(i));
         }
+
+        int genreChoice = -1;
+        while (genreChoice < 1 || genreChoice > genreList.size()) {
+            try {
+                genreChoice = Integer.parseInt(UI.s.nextLine().trim());
+                if (genreChoice < 1 || genreChoice > genreList.size())
+                    System.out.println("Please choose a number between 1 and " + genreList.size() + ".");
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a number.");
+            }
+        }
+        String albumGenre = genreList.get(genreChoice - 1);
 
         double price = -1;
         while (price <= 0) {
@@ -361,6 +371,41 @@ public class Album {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void inputSearchAlbums() {
+        UI.s.nextLine(); // consume trailing newline from menu selection
+        System.out.println("Search by:\n1. Album name\n2. Artist name\n3. Best-sellers");
+
+        int choice = -1;
+        while (choice < 1 || choice > 3) {
+            try {
+                choice = Integer.parseInt(UI.s.nextLine().trim());
+                if (choice < 1 || choice > 3) System.out.println("Please choose 1, 2, or 3.");
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a number.");
+            }
+        }
+
+        ArrayList<String> albumNames = new ArrayList<>();
+        ArrayList<Integer> albumIDs = new ArrayList<>();
+
+        switch (choice) {
+            case 1: filterAlbumsByName(albumNames, albumIDs); break;
+            case 2: filterAlbumsByArtist(albumNames, albumIDs); break;
+            case 3: filterAlbumsByBestselling(albumNames, albumIDs); break;
+        }
+
+        if (albumNames.isEmpty()) {
+            System.out.println("No albums found.");
+        } else {
+            System.out.println("\nResults:");
+            for (int i = 0; i < albumNames.size(); i++) {
+                System.out.println((i + 1) + ". " + albumNames.get(i));
+            }
+        }
+
+        UI.waitForEnter();
     }
 
     public static void executeAlbumPurchase(int productID) {

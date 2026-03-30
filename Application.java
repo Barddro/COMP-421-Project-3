@@ -28,7 +28,7 @@ class Application {
         String your_password = System.getenv("SOCSPASSWD");
 
         if (your_userid == null || your_password == null) {
-            throw new Exception("Must have SOCSUSER and SOCSPASSED env variables set!");
+            throw new Exception("Must have SOCSUSER and SOCSPASSWD env variables set!");
         }
 
         DAO.getConnection(url, your_userid, your_password);
@@ -48,12 +48,14 @@ class Application {
                 "2. Purchase an album\n" +
                 "3. Upload a new album\n" +
                 "4. View top albums by genre\n" +
-                "5. View, create or modify playlists";
+                "5. View, create or modify playlists\n" +
+                "6. Search for albums";
 
         final String MENU1 = "Please choose an option from the following:\n" +
                 "0. Back\n" +
                 "1. Log in\n" +
-                "2. Create an account";
+                "2. Create an account\n" +
+                "3. Become an artist";
 
         final String MENU5 = "Please choose an option from the following:\n" +
                 "0. Back\n" +
@@ -66,7 +68,7 @@ class Application {
             System.out.println(MENU);
             int menuOption = UI.s.nextInt();
 
-            if (!UI.validateInputRange(1, 6, menuOption)) {
+            if (!UI.validateInputRange(0, 6, menuOption)) {
                 continue;
             }
 
@@ -78,7 +80,7 @@ class Application {
 
                         menuOption = UI.s.nextInt();
 
-                        if (!UI.validateInputRange(0, 2, menuOption)) {
+                        if (!UI.validateInputRange(0, 3, menuOption)) {
                             continue;
                         }
 
@@ -90,6 +92,9 @@ class Application {
                                 break menu1_checkpoint;
                             case 2:
                                 UI.inputCreateAccount();
+                                break menu1_checkpoint;
+                            case 3:
+                                UI.inputBecomeArtist();
                                 break menu1_checkpoint;
                         }
                     }
@@ -134,6 +139,9 @@ class Application {
                         }
                     }
                     continue;
+                case 6:
+                    Album.inputSearchAlbums();
+                    break;
                 case 0:
                     System.exit(0);
                 default:
