@@ -16,4 +16,9 @@ public class GuestUser extends UserTemplate {
 		return null;
 	}
 
+	@Override
+	int getArtistID() {
+		return -1;
+	}
+
 }

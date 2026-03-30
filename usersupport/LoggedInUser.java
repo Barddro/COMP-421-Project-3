@@ -2,11 +2,11 @@ package usersupport;
 
 public class LoggedInUser extends UserTemplate {
     private String username;
-    private boolean isArtist;
+    private int artistID;
 
-    LoggedInUser(String username, boolean isArtist) {
+    LoggedInUser(String username, int artistID) {
         this.username = username;
-        this.isArtist = isArtist;
+        this.artistID = artistID;
     }
 
     @Override
@@ -16,13 +16,16 @@ public class LoggedInUser extends UserTemplate {
 
     @Override
     boolean isArtist() {
-        return this.isArtist;
+        return this.artistID != -1;
     }
-    
+
     @Override
     String getUsername() {
     	return this.username;
     }
 
-    // may want to move artist functionality here for simplicity, and just have a validateArtist method, or an account-type field
+    @Override
+    int getArtistID() {
+        return this.artistID;
+    }
 }

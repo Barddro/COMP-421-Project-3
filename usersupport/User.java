@@ -53,7 +53,7 @@ public class User {
 //                "WHERE u.username = ? " +
 //                "AND u.password = ?";
 
-        String query = "SELECT username FROM User " +
+        String query = "SELECT username, artistID FROM User " +
                 "WHERE username = ? " +
                 "AND password = ?";
         try (PreparedStatement stmt = DAO.getConnection().prepareStatement(query)) {
@@ -62,7 +62,9 @@ public class User {
             ResultSet results = stmt.executeQuery();
 
             if (results.next()) {
-                this.user = new LoggedInUser(username, false);
+                int artistID = results.getInt("artistID");
+                if (results.wasNull()) artistID = -1;
+                this.user = new LoggedInUser(username, artistID);
                 System.out.println("Logged in! Welcome, " + username);
             } else {
                 // no user found (invalid username/password)
@@ -88,5 +90,9 @@ public class User {
     
     public String getUsername() {
     	return this.user.getUsername();
+    }
+
+    public int getArtistID() {
+        return this.user.getArtistID();
     }
 }
