@@ -24,16 +24,20 @@ class Application {
         return true;
     }
 
-    /**
-     * Returns true if the user is logged in, false otherwise.
-     * If not logged in, prints the provided error message.
-     */
+     //Returns true if the user is logged in, false otherwise
+     //If not logged in, prints the provided error message
     public static boolean verifyUserLogin(String error) {
         if (!user.validate()) {
             System.out.println(error);
             return false;
         }
         return true;
+    }
+
+    //useful for managing ux flow
+    public static void waitForEnter() {
+        System.out.println("Press ENTER to continue...");
+        s.nextLine();
     }
 
 
@@ -118,8 +122,10 @@ class Application {
 
         System.out.println("Please enter your password:");
         String password = s.next();
+        s.nextLine();
 
         Application.user.login(username, password);
+        waitForEnter();
     }
 
 
@@ -485,6 +491,201 @@ class Application {
         return results;
     }
 
+    public static void inputListPlaylists() {
+        s.nextLine(); // flush trailing newline from menu's nextInt()
+
+        ArrayList<String[]> playlists;
+        try {
+            playlists = Playlist.listPlaylists(user.getUsername());
+        } catch (SQLException e) {
+            System.err.println("Failed to retrieve playlists.");
+            System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+            return;
+        }
+
+        if (playlists.isEmpty()) {
+            System.out.println("You have no playlists yet.");
+            waitForEnter();
+            return;
+        }
+
+        System.out.println("Your playlists:");
+        for (int i = 0; i < playlists.size(); i++) {
+            String[] row = playlists.get(i);
+            System.out.println((i + 1) + ". " + row[1] + " (" + row[2] + " songs)");
+        }
+
+        System.out.println("Enter a playlist number to view its songs (or 0 to go back):");
+        int choice = Integer.parseInt(getValidInput("integer"));
+
+        if (choice == 0) return;
+        if (!validateInputRange(1, playlists.size(), choice)) return;
+
+        String[] selected = playlists.get(choice - 1);
+        int playlistID = Integer.parseInt(selected[0]);
+        String playlistName = selected[1];
+
+        ArrayList<String[]> songs;
+        try {
+            songs = Playlist.listSongs(playlistID);
+        } catch (SQLException e) {
+            System.err.println("Failed to retrieve songs.");
+            System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+            return;
+        }
+
+        if (songs.isEmpty()) {
+            System.out.println("\"" + playlistName + "\" has no songs yet.");
+            waitForEnter();
+            return;
+        }
+
+        System.out.println("Songs in \"" + playlistName + "\":");
+        for (int i = 0; i < songs.size(); i++) {
+            String[] row = songs.get(i);
+            System.out.println((i + 1) + ". \"" + row[0] + "\" | Album: " + row[1] +
+                    " | Artist: " + row[2] + " | Length: " + row[3] + "s");
+        }
+
+        waitForEnter();
+    }
+
+    public static void inputModifyPlaylist() {
+        s.nextLine(); // flush trailing newline from menu's nextInt()
+
+        ArrayList<String[]> playlists;
+        try {
+            playlists = Playlist.listPlaylists(user.getUsername());
+        } catch (SQLException e) {
+            System.err.println("Failed to retrieve playlists.");
+            System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+            return;
+        }
+
+        if (playlists.isEmpty()) {
+            System.out.println("You have no playlists to modify.");
+            return;
+        }
+
+        System.out.println("Your playlists:");
+        for (int i = 0; i < playlists.size(); i++) {
+            String[] row = playlists.get(i);
+            System.out.println((i + 1) + ". " + row[1] + " (" + row[2] + " songs)");
+        }
+
+        System.out.println("Select a playlist to modify (or 0 to go back):");
+        int choice = Integer.parseInt(getValidInput("integer"));
+
+        if (choice == 0) return;
+        if (!validateInputRange(1, playlists.size(), choice)) return;
+
+        String[] selected = playlists.get(choice - 1);
+        int playlistID = Integer.parseInt(selected[0]);
+        String playlistName = selected[1];
+
+        modify_checkpoint:
+        while (true) {
+            System.out.println("Modifying \"" + playlistName + "\". Choose an option:");
+            System.out.println("1. Rename playlist");
+            System.out.println("2. Add a song");
+            System.out.println("3. Remove a song");
+            System.out.println("4. Back");
+            int modifyOption = Integer.parseInt(getValidInput("integer"));
+
+            switch (modifyOption) {
+                case 1:
+                    System.out.println("Enter a new name for \"" + playlistName + "\":");
+                    String newName = getValidInput("any");
+                    try {
+                        Playlist.rename(playlistID, newName, user.getUsername());
+                        System.out.println("Playlist renamed to \"" + newName + "\".");
+                        playlistName = newName;
+                    } catch (SQLException e) {
+                        System.err.println("Failed to rename playlist.");
+                        System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+                    }
+                    break;
+
+                case 2:
+                    System.out.println("Enter a song title to search:");
+                    String searchTerm = s.nextLine();
+                    ArrayList<String[]> results;
+                    try {
+                        results = Playlist.searchSongs(searchTerm);
+                    } catch (SQLException e) {
+                        System.err.println("Error searching for songs.");
+                        System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+                        break;
+                    }
+                    if (results.isEmpty()) {
+                        System.out.println("No songs found.");
+                        break;
+                    }
+                    for (int i = 0; i < results.size(); i++) {
+                        String[] row = results.get(i);
+                        System.out.println((i + 1) + ". \"" + row[0] + "\" | Album: " + row[2] +
+                                " | Artist: " + row[3] + " | Length: " + row[4] + "s");
+                    }
+                    System.out.println("Enter song number to add (or 0 to cancel):");
+                    int addChoice = Integer.parseInt(getValidInput("integer"));
+                    if (addChoice == 0) break;
+                    if (!validateInputRange(1, results.size(), addChoice)) break;
+                    String[] toAdd = results.get(addChoice - 1);
+                    try {
+                        if (Playlist.containsSong(playlistID, toAdd[0], Integer.parseInt(toAdd[1]))) {
+                            System.out.println("Song already in playlist.");
+                        } else {
+                            Playlist.addSong(playlistID, toAdd[0], Integer.parseInt(toAdd[1]));
+                            System.out.println("Added \"" + toAdd[0] + "\" to playlist.");
+                        }
+                    } catch (SQLException e) {
+                        System.err.println("Failed to add song.");
+                        System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+                    }
+                    break;
+
+                case 3:
+                    ArrayList<String[]> songs;
+                    try {
+                        songs = Playlist.listSongs(playlistID);
+                    } catch (SQLException e) {
+                        System.err.println("Failed to retrieve songs.");
+                        System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+                        break;
+                    }
+                    if (songs.isEmpty()) {
+                        System.out.println("Playlist is empty — nothing to remove.");
+                        break;
+                    }
+                    System.out.println("Songs in \"" + playlistName + "\":");
+                    for (int i = 0; i < songs.size(); i++) {
+                        String[] row = songs.get(i);
+                        System.out.println((i + 1) + ". \"" + row[0] + "\" | Album: " + row[1] +
+                                " | Artist: " + row[2]);
+                    }
+                    System.out.println("Enter song number to remove (or 0 to cancel):");
+                    int removeChoice = Integer.parseInt(getValidInput("integer"));
+                    if (removeChoice == 0) break;
+                    if (!validateInputRange(1, songs.size(), removeChoice)) break;
+                    String[] toRemove = songs.get(removeChoice - 1);
+                    try {
+                        Playlist.removeSong(playlistID, toRemove[0], Integer.parseInt(toRemove[4]));
+                        System.out.println("Removed \"" + toRemove[0] + "\" from playlist.");
+                    } catch (SQLException e) {
+                        System.err.println("Failed to remove song.");
+                        System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+                    }
+                    break;
+
+                case 4:
+                    break modify_checkpoint;
+
+                default:
+                    System.out.println("Please choose a valid option.");
+            }
+        }
+    }
+
     public static void inputCreatePlaylist() {
         s.nextLine(); // consume trailing newline left by menu's nextInt()
 
@@ -584,6 +785,56 @@ class Application {
         System.out.println("\nDone! Playlist \"" + playlistName + "\" has " + songsAdded + " song(s).");
     }
 
+    public static void inputDeletePlaylist() {
+        s.nextLine(); // flush trailing newline from menu's nextInt()
+
+        ArrayList<String[]> playlists;
+        try {
+            playlists = Playlist.listPlaylists(user.getUsername());
+        } catch (SQLException e) {
+            System.err.println("Failed to retrieve playlists.");
+            System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+            return;
+        }
+
+        if (playlists.isEmpty()) {
+            System.out.println("You have no playlists to delete.");
+            return;
+        }
+
+        System.out.println("Your playlists:");
+        for (int i = 0; i < playlists.size(); i++) {
+            String[] row = playlists.get(i);
+            System.out.println((i + 1) + ". " + row[1] + " (" + row[2] + " songs)");
+        }
+
+        System.out.println("Select a playlist to delete (or 0 to go back):");
+        int choice = Integer.parseInt(getValidInput("integer"));
+
+        if (choice == 0) return;
+        if (!validateInputRange(1, playlists.size(), choice)) return;
+
+        String[] selected = playlists.get(choice - 1);
+        int playlistID = Integer.parseInt(selected[0]);
+        String playlistName = selected[1];
+
+        System.out.println("Are you sure you want to delete \"" + playlistName + "\"? (y/n):");
+        if (!s.nextLine().trim().equalsIgnoreCase("y")) {
+            System.out.println("Deletion cancelled.");
+            return;
+        }
+
+        try {
+            Playlist.delete(playlistID, user.getUsername());
+            System.out.println("Playlist \"" + playlistName + "\" deleted.");
+        } catch (SQLException e) {
+            System.err.println("Failed to delete playlist.");
+            System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+        }
+    }
+
+
+
     // WE PREVENT SQL INJECTIONS BY USING PREPAREDSTATEMENTS
     public static void main(String[] args) throws Exception {
         // Unique table names.  Either the user supplies a unique identifier as a command line argument, or the program makes one up.
@@ -612,7 +863,7 @@ class Application {
         String your_userid = null;
         String your_password = null;
         //AS AN ALTERNATIVE, you can just set your password in the shell environment in the Unix (as shown below) and read it from there.
-        //$  export SOCSPASSWD=yoursocspasswd 
+        //$  export SOCSPASSWD=yoursocspasswd
         if(your_userid == null && (your_userid = System.getenv("SOCSUSER")) == null)
         {
           System.err.println("Error!! do not have a password to connect to the database!");
@@ -641,20 +892,20 @@ class Application {
                 "2. Purchase an album\n" +
                 "3. Upload a new album\n" +
                 "4. View top albums by genre\n" +
-                "5. Create a playlist\n" +
+                "5. View, create or modify playlists\n" +
                 "6. ";
 
         final String MENU1 = "Please choose an option from the following:\n" +
+                "0. Back\n" +
                 "1. Log in\n" +
-                "2. Create an account\n" +
-                "3. Back";
+                "2. Create an account";
 
 		final String MENU5 = "Please choose an option from the following:\n" +
+                "0. Back\n" +
 				"1. List your playlists\n" +
 				"2. Create a new playlist\n" +
 				"3. Modify an existing playlist\n" +
-				"4. Delete an existing playlist\n" +
-				"5. Back";
+				"4. Delete an existing playlist";
 
         while(true) {
             System.out.println(MENU);
@@ -672,19 +923,20 @@ class Application {
 
                         menuOption = s.nextInt();
 
-                        if(!validateInputRange(1, 3, menuOption)) {
+                        if(!validateInputRange(0, 2, menuOption)) {
                             continue;
                         }
 
                         switch(menuOption) {
+                            case 0:
+                                break menu1_checkpoint;
                             case 1:
                                 inputLogin();
                                 break menu1_checkpoint;
                             case 2:
                                 inputCreateAccount();
                                 break menu1_checkpoint;
-                            case 3:
-                                break menu1_checkpoint;
+
                         }
                     }
                 case 2:
@@ -708,31 +960,26 @@ class Application {
                         System.out.println(MENU5);
                         menuOption = s.nextInt();
 
-                        if (!validateInputRange(1, 5, menuOption)) {
+                        if (!validateInputRange(0, 5, menuOption)) {
                             continue;
                         }
 
                         switch (menuOption) {
+                            case 0:
+                                break menu5_checkpoint;
                             case 1:
-                                // TODO: list playlists
-								System.out.println("Error: not implemented");
-//								inputListPlaylists();
+								inputListPlaylists();
                                 break;
                             case 2:
                                 inputCreatePlaylist();
                                 break;
                             case 3:
-                                // TODO: modify playlist
-								System.out.println("Error: not implemented");
-//								inputModifyPlaylist();
+								inputModifyPlaylist();
                                 break;
                             case 4:
-                                // TODO: delete playlist
-								System.out.println("Error: not implemented");
-//								inputDeletePlaylist();
+								inputDeletePlaylist();
                                 break;
-                            case 5:
-                                break menu5_checkpoint;
+
                         }
                     }
                     continue;

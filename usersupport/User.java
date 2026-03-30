@@ -68,6 +68,7 @@ public class User {
                 // no user found (invalid username/password)
                 System.out.println("Incorrect username or password. Please try again");
             }
+
         }
         catch (SQLException e) {
             System.err.println("Error occurred when trying to log in. Please try again");
