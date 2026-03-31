@@ -142,7 +142,6 @@ class UI {
         System.out.println("Please enter your name:");
         String name = getValidInput("any");
 
-        System.out.println("Please enter your birth date:");
         Date sqlDate = Date.valueOf(getValidInput("birthdate"));
 
         User.createAccount(username, password, name, email, sqlDate);

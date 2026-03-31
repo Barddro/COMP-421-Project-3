@@ -179,8 +179,6 @@ class Playlist {
     }
 
     public static void inputListPlaylists() {
-        UI.s.nextLine(); // flush trailing newline from menu's nextInt()
-
         while(true) {
 
             ArrayList<String[]> playlists;
@@ -241,8 +239,6 @@ class Playlist {
     }
 
     public static void inputModifyPlaylist() {
-        UI.s.nextLine(); // flush trailing newline from menu's nextInt()
-
         ArrayList<String[]> playlists;
         try {
             playlists = Playlist.listPlaylists(UI.user.getUsername());
@@ -378,8 +374,6 @@ class Playlist {
     }
 
     public static void inputCreatePlaylist() {
-        UI.s.nextLine(); // consume trailing newline left by menu's nextInt()
-
         System.out.println("Enter a name for your new playlist:");
         String playlistName = UI.getValidInput("any");
 
@@ -477,8 +471,6 @@ class Playlist {
     }
 
     public static void inputDeletePlaylist() {
-        UI.s.nextLine(); // flush trailing newline from menu's nextInt()
-
         ArrayList<String[]> playlists;
         try {
             playlists = Playlist.listPlaylists(UI.user.getUsername());

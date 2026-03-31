@@ -24,8 +24,6 @@ public class Album {
             return;
         }
 
-        UI.s.nextLine(); // consume trailing newline from menu selection
-
         System.out.println("Please enter the name of the album:");
         String albumTitle = UI.s.nextLine().trim();
 
@@ -374,7 +372,6 @@ public class Album {
     }
 
     public static void inputSearchAlbums() {
-        UI.s.nextLine(); // consume trailing newline from menu selection
         System.out.println("Search by:\n1. Album name\n2. Artist name\n3. Best-sellers");
 
         int choice = -1;
@@ -398,14 +395,116 @@ public class Album {
 
         if (albumNames.isEmpty()) {
             System.out.println("No albums found.");
-        } else {
-            System.out.println("\nResults:");
-            for (int i = 0; i < albumNames.size(); i++) {
-                System.out.println((i + 1) + ". " + albumNames.get(i));
+            UI.waitForEnter();
+            return;
+        }
+
+        System.out.println("\nResults:");
+        for (int i = 0; i < albumNames.size(); i++) {
+            System.out.println((i + 1) + ". " + albumNames.get(i));
+        }
+
+        System.out.println("Select an album to view its songs (or 0 to go back):");
+        int albumChoice = -1;
+        while (albumChoice < 0 || albumChoice > albumNames.size()) {
+            try {
+                albumChoice = Integer.parseInt(UI.s.nextLine().trim());
+                if (albumChoice < 0 || albumChoice > albumNames.size())
+                    System.out.println("Please choose a number between 0 and " + albumNames.size() + ".");
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a number.");
             }
         }
 
+        if (albumChoice == 0) {
+            UI.waitForEnter();
+            return;
+        }
+
+        int selectedAlbumID = albumIDs.get(albumChoice - 1);
+        String selectedAlbumName = albumNames.get(albumChoice - 1);
+
+        ArrayList<String[]> songs = fetchAlbumSongs(selectedAlbumID);
+
+        if (songs.isEmpty()) {
+            System.out.println("No songs found for this album.");
+            UI.waitForEnter();
+            return;
+        }
+
+        System.out.println("\nSongs in " + selectedAlbumName + ":");
+        for (int i = 0; i < songs.size(); i++) {
+            String[] s = songs.get(i);
+            System.out.println((i + 1) + ". " + s[0] + " (" + s[1] + "s, " + s[2] + ")");
+        }
+
+        if (!UI.user.validate()) {
+            System.out.println("You must be logged in to stream a song.");
+            UI.waitForEnter();
+            return;
+        }
+
+        System.out.println("Select a song to stream (or 0 to go back):");
+        int songChoice = -1;
+        while (songChoice < 0 || songChoice > songs.size()) {
+            try {
+                songChoice = Integer.parseInt(UI.s.nextLine().trim());
+                if (songChoice < 0 || songChoice > songs.size())
+                    System.out.println("Please choose a number between 0 and " + songs.size() + ".");
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a number.");
+            }
+        }
+
+        if (songChoice == 0) {
+            UI.waitForEnter();
+            return;
+        }
+
+        String[] selectedSong = songs.get(songChoice - 1);
+        execStreamSong(selectedSong[0], selectedAlbumID, UI.user.getUsername());
+
         UI.waitForEnter();
+    }
+
+    public static ArrayList<String[]> fetchAlbumSongs(int productID) {
+        ArrayList<String[]> songs = new ArrayList<>();
+        String query = "SELECT songTitle, length, audioQuality FROM Songs WHERE productID = ? ORDER BY songTitle";
+        try (PreparedStatement ps = DAO.getConnection().prepareStatement(query)) {
+            ps.setInt(1, productID);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                songs.add(new String[]{
+                        rs.getString("songTitle"),
+                        String.valueOf(rs.getInt("length")),
+                        rs.getString("audioQuality")
+                });
+            }
+        } catch (SQLException e) {
+            System.err.println("Failed to fetch songs.");
+            System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+        }
+        return songs;
+    }
+
+    public static void execStreamSong(String songTitle, int productID, String username) {
+        String merge = """
+                MERGE INTO Streams AS target
+                USING (SELECT ? AS username, ? AS songTitle, ? AS productID FROM SYSIBM.SYSDUMMY1) AS source
+                ON target.username = source.username AND target.songTitle = source.songTitle AND target.productID = source.productID
+                WHEN MATCHED THEN UPDATE SET nStreams = target.nStreams + 1
+                WHEN NOT MATCHED THEN INSERT (username, songTitle, productID, nStreams) VALUES (source.username, source.songTitle, source.productID, 1)
+                """;
+        try (PreparedStatement ps = DAO.getConnection().prepareStatement(merge)) {
+            ps.setString(1, username);
+            ps.setString(2, songTitle);
+            ps.setInt(3, productID);
+            ps.executeUpdate();
+            System.out.println("Now streaming: \"" + songTitle + "\"");
+        } catch (SQLException e) {
+            System.err.println("Failed to stream song.");
+            System.err.println("Code: " + e.getErrorCode() + " SQLState: " + e.getSQLState());
+        }
     }
 
     public static void executeAlbumPurchase(int productID) {

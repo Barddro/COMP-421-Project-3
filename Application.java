@@ -67,6 +67,7 @@ class Application {
         while (true) {
             System.out.println(MENU);
             int menuOption = UI.s.nextInt();
+            UI.s.nextLine(); // flush trailing newline
 
             if (!UI.validateInputRange(0, 6, menuOption)) {
                 continue;
@@ -79,6 +80,7 @@ class Application {
                         System.out.println(MENU1);
 
                         menuOption = UI.s.nextInt();
+                        UI.s.nextLine(); // flush trailing newline
 
                         if (!UI.validateInputRange(0, 3, menuOption)) {
                             continue;
@@ -92,6 +94,7 @@ class Application {
                                 break menu1_checkpoint;
                             case 2:
                                 UI.inputCreateAccount();
+                                UI.waitForEnter();
                                 break menu1_checkpoint;
                             case 3:
                                 UI.inputBecomeArtist();
@@ -116,6 +119,7 @@ class Application {
                         }
                         System.out.println(MENU5);
                         menuOption = UI.s.nextInt();
+                        UI.s.nextLine(); // flush trailing newline
 
                         if (!UI.validateInputRange(0, 5, menuOption)) {
                             continue;
